@@ -20,9 +20,14 @@ public struct ISOInfo: Equatable {
     /// Se usa como proxy para la advertencia de Secure Boot 2023 (S-7).
     public let newestBootFileDate: Date?
 
+    /// Cómo debe escribirse este ISO para que el USB arranque (determina la
+    /// estrategia: copia FAT32 para Windows vs. escritura cruda para isohíbridos).
+    public let bootType: ISOBootType
+
     public init(url: URL, sizeBytes: UInt64, volumeName: String?,
                 isWindowsInstaller: Bool, installWIMSizeBytes: UInt64?,
-                usesESD: Bool, newestBootFileDate: Date?) {
+                usesESD: Bool, newestBootFileDate: Date?,
+                bootType: ISOBootType) {
         self.url = url
         self.sizeBytes = sizeBytes
         self.volumeName = volumeName
@@ -30,7 +35,11 @@ public struct ISOInfo: Equatable {
         self.installWIMSizeBytes = installWIMSizeBytes
         self.usesESD = usesESD
         self.newestBootFileDate = newestBootFileDate
+        self.bootType = bootType
     }
+
+    /// `true` si la app puede crear un USB booteable de este ISO (Windows o isohíbrido).
+    public var bootIsSupported: Bool { bootType.isSupportable }
 
     /// Límite duro de FAT32 por archivo: 4 GiB.
     public static let fat32FileLimit: UInt64 = 4 * 1024 * 1024 * 1024

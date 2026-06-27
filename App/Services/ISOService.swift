@@ -96,6 +96,9 @@ public final class ISOService {
 
         let isoSize = (try? fm.attributesOfItem(atPath: isoURL.path)[.size] as? NSNumber)??.uint64Value ?? 0
 
+        // Clasifica la estrategia de arranque leyendo la cabecera del ISO (MBR/El Torito).
+        let bootType = ISOBootDetector.detect(isoAt: isoURL, isWindows: isWindows)
+
         return ISOInfo(
             url: isoURL,
             sizeBytes: isoSize,
@@ -103,7 +106,8 @@ public final class ISOService {
             isWindowsInstaller: isWindows,
             installWIMSizeBytes: wimSize,
             usesESD: hasESD && !hasWIM,
-            newestBootFileDate: newestBoot
+            newestBootFileDate: newestBoot,
+            bootType: bootType
         )
     }
 

@@ -93,9 +93,10 @@ final class ISOServiceTests: XCTestCase {
 
     // MARK: Helpers
 
-    private func makeISOInfo(wimSize: UInt64?) -> ISOInfo {
+    private func makeISOInfo(wimSize: UInt64?, bootType: ISOBootType = .windows) -> ISOInfo {
         ISOInfo(url: URL(fileURLWithPath: "/tmp/x.iso"), sizeBytes: 5_000_000_000,
                 volumeName: "CCCOMA", isWindowsInstaller: true,
-                installWIMSizeBytes: wimSize, usesESD: false, newestBootFileDate: nil)
+                installWIMSizeBytes: wimSize, usesESD: false, newestBootFileDate: nil,
+                bootType: bootType)
     }
 }
