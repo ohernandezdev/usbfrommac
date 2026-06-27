@@ -1,0 +1,14 @@
+# Proyecto Xcode generado por XcodeGen (no se versiona; se regenera con `xcodegen generate`)
+*.xcodeproj/
+
+# Builds y derivados
+build/
+DerivedData/
+*.xcarchive
+
+# Binario wimlib empaquetado (artefacto; cada quien lo genera con scripts/package-wimlib.sh)
+App/Resources/wimlib-imagex
+App/Resources/*.dylib
+
+# macOS
+.DS_Store

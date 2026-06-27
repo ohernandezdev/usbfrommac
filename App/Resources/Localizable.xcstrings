@@ -1,0 +1,624 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "build.detail.cancelled" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Process cancelled." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Proceso cancelado." } }
+      }
+    },
+    "build.detail.copyingFile %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Copying %@" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Copiando %@" } }
+      }
+    },
+    "build.detail.copyingISO" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Copying files from the ISO…" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Copiando archivos del ISO…" } }
+      }
+    },
+    "build.detail.copyingWim" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Copying install.wim…" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Copiando install.wim…" } }
+      }
+    },
+    "build.detail.ejecting" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Safely ejecting the USB…" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Expulsando el USB de forma segura…" } }
+      }
+    },
+    "build.detail.finalized" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Finished." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Finalizado." } }
+      }
+    },
+    "build.detail.formatted" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Disk formatted." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Disco formateado." } }
+      }
+    },
+    "build.detail.formatting %@ %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Formatting %1$@ (%2$@)…" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Formateando %1$@ (%2$@)…" } }
+      }
+    },
+    "build.detail.preparing" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Preparing…" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Preparando…" } }
+      }
+    },
+    "build.detail.ready" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The USB is ready." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "El USB está listo." } }
+      }
+    },
+    "build.detail.requestingAuth" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Requesting administrator authorization…" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Solicitando autorización de administrador…" } }
+      }
+    },
+    "build.detail.revalidating" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Re-validating the selected disk…" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Revalidando el disco seleccionado…" } }
+      }
+    },
+    "build.detail.splitting" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Splitting install.wim…" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Dividiendo install.wim…" } }
+      }
+    },
+    "build.detail.unmountingISO" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unmounting the ISO…" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Desmontando el ISO…" } }
+      }
+    },
+    "build.detail.wimCopied" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "install.wim copied." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "install.wim copiado." } }
+      }
+    },
+    "common.back" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Back" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Atrás" } }
+      }
+    },
+    "common.cancel" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancel" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Cancelar" } }
+      }
+    },
+    "common.continue" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Continue" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Continuar" } }
+      }
+    },
+    "common.restart" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Start over" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Volver a empezar" } }
+      }
+    },
+    "confirm.acknowledge %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "I understand **all** content on **%@** will be erased." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Entiendo que se borrará **todo** el contenido de **%@**." } }
+      }
+    },
+    "confirm.formatAndCreate" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Format and create USB" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Formatear y crear USB" } }
+      }
+    },
+    "confirm.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Confirm before erasing" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Confirma antes de borrar" } }
+      }
+    },
+    "confirm.usbName" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "USB name (FAT32):" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Nombre del USB (FAT32):" } }
+      }
+    },
+    "confirm.willErase" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Everything will be erased on:" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Se borrará TODO el contenido de:" } }
+      }
+    },
+    "disk.empty" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Connect a USB drive" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Conecta una memoria USB" } }
+      }
+    },
+    "disk.recommendSize" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "16 GB or more recommended." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Se recomiendan 16 GB o más." } }
+      }
+    },
+    "disk.subtitle" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Only external USB drives are shown. The internal disk never appears." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Solo se muestran unidades USB externas. El disco interno nunca aparece." } }
+      }
+    },
+    "disk.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose the USB drive" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Elige la memoria USB" } }
+      }
+    },
+    "disk.tooSmall" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Under 8 GB: too small for Windows 11." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Menos de 8 GB: demasiado pequeño para Windows 11." } }
+      }
+    },
+    "duration.minutes %lld" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld min" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "%lld min" } }
+      }
+    },
+    "duration.minutesSeconds %lld %lld" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$lld min %2$lld s" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "%1$lld min %2$lld s" } }
+      }
+    },
+    "duration.seconds %lld" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld s" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "%lld s" } }
+      }
+    },
+    "error.build.diskChanged" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The selected disk changed or was disconnected. For safety it was cancelled before formatting." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "El disco seleccionado cambió o se desconectó. Por seguridad se canceló antes de formatear." } }
+      }
+    },
+    "error.build.eraseTimedOut" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Formatting took too long to respond." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "El formateo tardó demasiado en responder." } }
+      }
+    },
+    "error.build.usbVolumeNotFound" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The USB volume wasn't found after formatting. Reconnect it and try again." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se encontró el volumen del USB tras formatear. Reconéctalo e inténtalo de nuevo." } }
+      }
+    },
+    "error.copy.cancelled" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Copy cancelled." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Copia cancelada." } }
+      }
+    },
+    "error.copy.readFailed %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't read: %@" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se pudo leer: %@" } }
+      }
+    },
+    "error.copy.writeFailed %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't write: %@" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se pudo escribir: %@" } }
+      }
+    },
+    "error.helper.connectionFailed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't connect to the privileged component." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se pudo conectar con el componente con privilegios." } }
+      }
+    },
+    "error.helper.interrupted" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The connection to the privileged component was interrupted." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "La conexión con el componente con privilegios se interrumpió." } }
+      }
+    },
+    "error.helper.registrationFailed %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't register the privileged component: %@" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se pudo registrar el componente con privilegios: %@" } }
+      }
+    },
+    "error.helper.requiresApproval" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Authorize “WinUSB Mac” in System Settings → General → Login Items to allow formatting." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Autoriza «WinUSB Mac» en Ajustes del Sistema → General → Elementos de inicio para poder formatear." } }
+      }
+    },
+    "error.iso.attachFailed %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't mount the ISO: %@" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se pudo montar el ISO: %@" } }
+      }
+    },
+    "error.iso.cancelled" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Operation cancelled." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Operación cancelada." } }
+      }
+    },
+    "error.iso.detachFailed %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't unmount the ISO: %@" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se pudo desmontar el ISO: %@" } }
+      }
+    },
+    "error.iso.notMountable" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The file couldn't be mounted as an image." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "El archivo no se pudo montar como imagen." } }
+      }
+    },
+    "error.iso.readFailed %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't read the file: %@" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se pudo leer el archivo: %@" } }
+      }
+    },
+    "error.wim.binaryNotBundled" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The bundled wimlib-imagex binary is missing from the app (setup step)." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Falta el binario wimlib-imagex empaquetado en la app (paso de configuración)." } }
+      }
+    },
+    "error.wim.cancelled" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Split cancelled." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "División cancelada." } }
+      }
+    },
+    "error.wim.splitFailed %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't split install.wim: %@" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se pudo dividir install.wim: %@" } }
+      }
+    },
+    "lang.menu.help" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Interface language" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Idioma de la interfaz" } }
+      }
+    },
+    "lang.system" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "System" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Sistema" } }
+      }
+    },
+    "iso.drop.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Drag your Windows ISO here" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Arrastra tu ISO de Windows aquí" } }
+      }
+    },
+    "iso.drop.subtitle" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "or click to browse" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "o haz clic para seleccionar" } }
+      }
+    },
+    "hash.paste" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Paste" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Pegar" } }
+      }
+    },
+    "hash.computing %lld" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Computing… %lld%%" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Calculando… %lld%%" } }
+      }
+    },
+    "hash.match" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The hash matches." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "El hash coincide." } }
+      }
+    },
+    "hash.noMatch" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The hash does NOT match." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "El hash NO coincide." } }
+      }
+    },
+    "hash.placeholder" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Official SHA-256…" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "SHA-256 oficial…" } }
+      }
+    },
+    "hash.subtitle" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Paste the SHA-256 shown on Microsoft's download page." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Pega el SHA-256 que muestra Microsoft en su página de descarga." } }
+      }
+    },
+    "hash.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Verify SHA-256 (optional)" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Verificar SHA-256 (opcional)" } }
+      }
+    },
+    "hash.verify" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Verify" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Verificar" } }
+      }
+    },
+    "iso.analyzing" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Analyzing the ISO…" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Analizando el ISO…" } }
+      }
+    },
+    "iso.change" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Change ISO…" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Cambiar ISO…" } }
+      }
+    },
+    "iso.installerDetected" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Windows installer detected." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Instalador de Windows detectado." } }
+      }
+    },
+    "iso.notInstaller" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This doesn't look like a Windows installer." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No parece un instalador de Windows." } }
+      }
+    },
+    "iso.secureBoot.modern" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Secure Boot compatible (2023 cert likely)." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Compatible con Secure Boot (cert 2023 probable)." } }
+      }
+    },
+    "iso.secureBoot.outdated" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This ISO looks old: due to the 2011 Secure Boot certificate revocation (2026) it may not boot with Secure Boot enabled. Use a recent ISO." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Este ISO parece antiguo: por la revocación del certificado Secure Boot 2011 (2026) podría no arrancar con Secure Boot activado. Usa un ISO reciente." } }
+      }
+    },
+    "iso.secureBoot.unknown" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't assess the ISO age for Secure Boot." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se pudo evaluar la antigüedad para Secure Boot." } }
+      }
+    },
+    "iso.select" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select ISO…" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Seleccionar ISO…" } }
+      }
+    },
+    "iso.subtitle" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Choose the official .iso file. Nothing is modified yet." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Elige el archivo .iso oficial. La app no modifica nada todavía." } }
+      }
+    },
+    "iso.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select the Windows 11 ISO" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Selecciona el ISO de Windows 11" } }
+      }
+    },
+    "iso.wim.fits %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "install.wim is %@ → it fits on FAT32." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "install.wim ocupa %@ → cabe en FAT32." } }
+      }
+    },
+    "iso.wim.willSplit %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "install.wim is %@ → it will be split for FAT32." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "install.wim ocupa %@ → se dividirá para FAT32." } }
+      }
+    },
+    "phase.cancelled" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancelled" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Cancelado" } }
+      }
+    },
+    "phase.copying" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Copy files" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Copiar archivos" } }
+      }
+    },
+    "phase.done" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Completed" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Completado" } }
+      }
+    },
+    "phase.failed" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Error" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Error" } }
+      }
+    },
+    "phase.finalizing" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Finalize" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Finalizar" } }
+      }
+    },
+    "phase.formatting" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Format" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Formatear" } }
+      }
+    },
+    "phase.idle" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ready" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Listo" } }
+      }
+    },
+    "phase.splitting" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Split install.wim" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Dividir install.wim" } }
+      }
+    },
+    "progress.creating" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Creating the USB…" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Creando el USB…" } }
+      }
+    },
+    "progress.heartbeat.formatting" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Formatting… this can take ~1 min" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Formateando… puede tardar ~1 min" } }
+      }
+    },
+    "progress.heartbeat.working" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Working…" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Trabajando…" } }
+      }
+    },
+    "result.cancelled.message" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Nothing else was modified." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se modificó nada más." } }
+      }
+    },
+    "result.cancelled.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Process cancelled" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Proceso cancelado" } }
+      }
+    },
+    "result.failed.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Couldn't complete" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "No se pudo completar" } }
+      }
+    },
+    "step.goBack" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Go back to this step" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Volver a este paso" } }
+      }
+    },
+    "step.confirm" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Confirm" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Confirmar" } }
+      }
+    },
+    "step.create" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Create" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Crear" } }
+      }
+    },
+    "step.iso" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Windows ISO" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "ISO de Windows" } }
+      }
+    },
+    "step.usb" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "USB drive" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Memoria USB" } }
+      }
+    },
+    "success.boot.tip1" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open the boot menu (F12 / F10 / Esc / Del depending on the board)." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Entra al menú de arranque (F12 / F10 / Esc / Supr según la placa)." } }
+      }
+    },
+    "success.boot.tip2" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Enable UEFI mode and disable CSM/Legacy." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Activa el modo UEFI y desactiva CSM/Legacy." } }
+      }
+    },
+    "success.boot.tip3" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Disable Fast Boot." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Desactiva Fast Boot." } }
+      }
+    },
+    "success.boot.tip4" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Secure Boot can stay enabled if the ISO is recent (2023 cert)." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Secure Boot puede quedar activado si el ISO es reciente (cert 2023)." } }
+      }
+    },
+    "success.boot.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "To boot the target PC" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Para arrancar en la PC destino" } }
+      }
+    },
+    "success.createAnother" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Create another USB" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Crear otro USB" } }
+      }
+    },
+    "success.subtitle" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You can eject it and boot the target PC from it." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Ya puedes expulsarlo y arrancar la PC destino desde él." } }
+      }
+    },
+    "success.title" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Windows 11 USB ready" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "USB de Windows 11 listo" } }
+      }
+    },
+    "transfer.eta %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%@ left" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "faltan %@" } }
+      }
+    },
+    "transfer.progress %@ %@ %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "%1$@ of %2$@ (%3$@)" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "%1$@ de %2$@ (%3$@)" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}
