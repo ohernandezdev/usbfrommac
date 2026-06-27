@@ -38,8 +38,22 @@ final class BuildFlowTests: XCTestCase {
         XCTAssertEqual(BuildProgress.overall(phase: .done, phaseFraction: 0), 1.0, accuracy: 0.0001)
     }
 
-    func testPhaseWeightsSumToOne() {
+    // Flujo raw (Linux): escribir la imagen es casi todo; finalizar cierra el último 5%.
+    func testOverallFractionRawFlow() {
+        XCTAssertEqual(BuildProgress.overall(phase: .writingImage, phaseFraction: 0), 0, accuracy: 0.0001)
+        XCTAssertEqual(BuildProgress.overall(phase: .writingImage, phaseFraction: 0.5), 0.475, accuracy: 0.0001)
+        XCTAssertEqual(BuildProgress.overall(phase: .writingImage, phaseFraction: 1), 0.95, accuracy: 0.0001)
+        // finalizing arranca en 0.95 en AMBOS flujos (Windows y raw).
+        XCTAssertEqual(BuildProgress.overall(phase: .finalizing, phaseFraction: 0), 0.95, accuracy: 0.0001)
+    }
+
+    func testWindowsPhaseWeightsSumToOne() {
         let total = BuildPhase.ordered.reduce(0) { $0 + $1.weight }
+        XCTAssertEqual(total, 1.0, accuracy: 0.0001)
+    }
+
+    func testRawPhaseWeightsSumToOne() {
+        let total = BuildPhase.rawOrdered.reduce(0) { $0 + $1.weight }
         XCTAssertEqual(total, 1.0, accuracy: 0.0001)
     }
 

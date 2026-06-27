@@ -445,6 +445,24 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "install.wim ocupa %@ → se dividirá para FAT32." } }
       }
     },
+    "phase.writingImage" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Write image" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Escribir imagen" } }
+      }
+    },
+    "build.detail.writingImage" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Writing the image to the USB…" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Escribiendo la imagen en el USB…" } }
+      }
+    },
+    "error.build.unsupportedISO" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This ISO is not bootable in a supported way, so a working USB can't be created from it." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Este ISO no es booteable de una forma compatible, así que no se puede crear un USB que funcione." } }
+      }
+    },
     "phase.cancelled" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Cancelled" } },

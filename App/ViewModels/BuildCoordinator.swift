@@ -46,6 +46,7 @@ public final class BuildCoordinator: ObservableObject {
     // Medidores de velocidad por fase (bytes/seg suavizados).
     private let copyMeter = RateMeter()
     private let splitMeter = RateMeter()
+    private let rawMeter = RateMeter()
 
     public let diskService: DiskService
     private let iso: ISOService
@@ -221,7 +222,21 @@ public final class BuildCoordinator: ObservableObject {
 
     // MARK: - Orquestación (hilo de fondo)
 
+    /// Despacha al flujo correcto según el tipo de arranque del ISO.
     private func runBuild(disk: Disk, mounted: MountedISO, info: ISOInfo, label: String) throws {
+        switch info.bootType {
+        case .windows:
+            try runWindowsBuild(disk: disk, mounted: mounted, info: info, label: label)
+        case .hybridRaw:
+            try runRawBuild(disk: disk, info: info)
+        case .elToritoOnly, .notBootable:
+            // No debería llegar aquí (el wizard filtra antes), pero por seguridad.
+            throw BuildError.unsupportedISO
+        }
+    }
+
+    /// Flujo Windows: formatear FAT32 → copiar → dividir install.wim → finalizar.
+    private func runWindowsBuild(disk: Disk, mounted: MountedISO, info: ISOInfo, label: String) throws {
         let cancelled: () -> Bool = { [cancelToken] in cancelToken.isCancelled }
         func checkpoint() throws { if cancelled() { throw CancellationSignal() } }
 
@@ -309,6 +324,57 @@ public final class BuildCoordinator: ObservableObject {
         detachISOIfNeeded()
         setProgress(.finalizing, 0.7, loc("build.detail.ejecting"))
         _ = Subprocess.run("/usr/sbin/diskutil", ["eject", "/dev/\(disk.id)"])
+        setProgress(.finalizing, 1.0, loc("build.detail.finalized"))
+    }
+
+    /// Flujo raw (Linux/isohíbrido): escribir el ISO CRUDO al disco con el helper
+    /// root (no formatear/etiqueta/split). El helper desmonta, escribe `/dev/rdiskN`
+    /// y expulsa; aquí solo orquestamos y reportamos el progreso por callback.
+    private func runRawBuild(disk: Disk, info: ISOInfo) throws {
+        // S-3: revalidación JIT justo antes de la operación destructiva.
+        setProgress(.writingImage, 0, loc("build.detail.revalidating"))
+        guard DiskRevalidation.isStillValid(selected: disk, in: diskService.snapshot()) else {
+            throw BuildError.diskChanged
+        }
+        if cancelToken.isCancelled { throw CancellationSignal() }
+
+        setProgress(.writingImage, 0, loc("build.detail.requestingAuth"))
+        try helper.registerIfNeeded()
+        if cancelToken.isCancelled { throw CancellationSignal() }
+
+        rawMeter.reset()
+        setProgress(.writingImage, 0, loc("build.detail.writingImage"),
+                    bytesDone: 0, bytesTotal: info.sizeBytes, bytesPerSecond: nil)
+
+        // El helper escribe el ARCHIVO .iso (info.url), no el montaje. Puente
+        // async→sync: lanzamos la escritura y esperamos su resolución. NOTA: el `dd`
+        // del helper no es interrumpible, así que durante esta fase la cancelación
+        // no aborta a mitad (el USB quedaría reformateable). La UI deshabilita Cancelar.
+        let lock = NSLock()
+        var done = false
+        var writeError: Error?
+        Task {
+            var err: Error?
+            do {
+                try await self.helper.writeImage(isoPath: info.url.path, bsdName: disk.id) { written, total in
+                    let frac = total > 0 ? Double(written) / Double(total) : 0
+                    let bps = self.rawMeter.sample(bytes: UInt64(max(0, written)), at: Date())
+                    self.setProgress(.writingImage, frac, loc("build.detail.writingImage"),
+                                     bytesDone: UInt64(max(0, written)), bytesTotal: UInt64(max(0, total)),
+                                     bytesPerSecond: bps)
+                }
+            } catch { err = error }
+            lock.lock(); done = true; writeError = err; lock.unlock()
+        }
+        while true {
+            lock.lock(); let d = done; let e = writeError; lock.unlock()
+            if d { if let e { throw e }; break }
+            usleep(200_000)
+        }
+
+        // El helper ya expulsó el disco; solo queda soltar el ISO.
+        setProgress(.finalizing, 0.6, loc("build.detail.unmountingISO"))
+        detachISOIfNeeded()
         setProgress(.finalizing, 1.0, loc("build.detail.finalized"))
     }
 
@@ -433,6 +499,7 @@ enum BuildError: LocalizedError {
     case diskChanged
     case usbVolumeNotFound
     case eraseTimedOut
+    case unsupportedISO
 
     var errorDescription: String? {
         switch self {
@@ -442,6 +509,8 @@ enum BuildError: LocalizedError {
             return loc("error.build.usbVolumeNotFound")
         case .eraseTimedOut:
             return loc("error.build.eraseTimedOut")
+        case .unsupportedISO:
+            return loc("error.build.unsupportedISO")
         }
     }
 }

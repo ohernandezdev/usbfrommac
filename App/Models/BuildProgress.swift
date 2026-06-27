@@ -40,10 +40,16 @@ public struct BuildProgress: Equatable {
 
     public static func overall(phase: BuildPhase, phaseFraction: Double) -> Double {
         if phase == .done { return 1 }
-        guard let idx = BuildPhase.ordered.firstIndex(of: phase) else { return 0 }
-        var sum = 0.0
-        for p in BuildPhase.ordered.prefix(idx) { sum += p.weight }
-        sum += BuildPhase.ordered[idx].weight * min(1, max(0, phaseFraction))
-        return min(1, sum)
+        let f = min(1, max(0, phaseFraction))
+        // Tramos explícitos: las fases Windows y la raw nunca coexisten en un build,
+        // y `finalizing` cierra 0.95→1.0 en AMBOS flujos.
+        switch phase {
+        case .formatting:   return 0.05 * f
+        case .copying:      return 0.05 + 0.60 * f
+        case .splitting:    return 0.65 + 0.30 * f
+        case .writingImage: return 0.95 * f
+        case .finalizing:   return 0.95 + 0.05 * f
+        default:            return 0
+        }
     }
 }
