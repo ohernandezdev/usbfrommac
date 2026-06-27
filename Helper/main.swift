@@ -19,6 +19,9 @@ final class HelperListenerDelegate: NSObject, NSXPCListenerDelegate {
         newConnection.setCodeSigningRequirement(HelperConstants.clientCodeSigningRequirement)
         newConnection.exportedInterface = NSXPCInterface(with: HelperProtocol.self)
         newConnection.exportedObject = service
+        // Canal inverso: el helper puede llamar al objeto de progreso de la app
+        // durante la escritura raw (operación larga).
+        newConnection.remoteObjectInterface = NSXPCInterface(with: HelperProgressProtocol.self)
         newConnection.resume()
         return true
     }

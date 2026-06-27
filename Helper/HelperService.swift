@@ -45,6 +45,99 @@ final class HelperService: NSObject, HelperProtocol {
         reply(result.ok, result.message)
     }
 
+    // MARK: - Escritura raw (ISOs isohíbridos / Linux)
+
+    func writeImage(isoPath: String,
+                    bsdName: String,
+                    reply: @escaping (Bool, String?) -> Void) {
+
+        // Mismas salvaguardas que el formateo: el raw write es igual de destructivo.
+        guard Self.isValidWholeDiskBSD(bsdName) else {
+            return reply(false, "Identificador de disco no válido: \(bsdName)")
+        }
+        guard FileManager.default.fileExists(atPath: isoPath) else {
+            return reply(false, "No se encontró la imagen en \(isoPath).")
+        }
+        if let boot = Self.bootDiskBSDName(), boot == bsdName {
+            return reply(false, "Operación rechazada: el target es el disco de arranque del sistema.")
+        }
+        if case .failure(let message) = Self.validateRemovableExternal(bsdName, diskutil: diskutil) {
+            return reply(false, message)
+        }
+
+        // Hay que desmontar TODO el disco antes de escribir el device crudo.
+        let unmount = Self.runProcess(diskutil, ["unmountDisk", "force", "/dev/\(bsdName)"])
+        guard unmount.status == 0 else {
+            let msg = String(data: unmount.stderr, encoding: .utf8) ?? ""
+            return reply(false, "No se pudo desmontar el disco antes de escribir: \(msg)")
+        }
+
+        // Canal inverso de progreso hacia la app (si está disponible).
+        let progress = NSXPCConnection.current()?.remoteObjectProxy as? HelperProgressProtocol
+
+        let result = Self.rawWrite(isoPath: isoPath, bsdName: bsdName) { written, total in
+            progress?.didWrite(bytes: written, of: total)
+        }
+        if result.ok {
+            _ = Self.runProcess(diskutil, ["eject", "/dev/\(bsdName)"])
+        }
+        reply(result.ok, result.message)
+    }
+
+    /// Vuelca el ISO byte a byte sobre `/dev/rdiskN` (device crudo, rápido).
+    /// Escrituras alineadas al tamaño de bloque del device (el último bloque se
+    /// rellena con ceros, inocuo). Sin fallback: cualquier fallo de IO aborta.
+    static func rawWrite(isoPath: String,
+                         bsdName: String,
+                         progress: (Int64, Int64) -> Void) -> (ok: Bool, message: String?) {
+
+        let total = (try? FileManager.default.attributesOfItem(atPath: isoPath)[.size] as? NSNumber)??.int64Value ?? 0
+
+        guard let input = FileHandle(forReadingAtPath: isoPath) else {
+            return (false, "No se pudo abrir la imagen para lectura.")
+        }
+        defer { try? input.close() }
+
+        // Device crudo: /dev/rdiskN es mucho más rápido que /dev/diskN.
+        let fd = open("/dev/r\(bsdName)", O_RDWR)
+        guard fd >= 0 else {
+            return (false, "No se pudo abrir el device /dev/r\(bsdName) (errno \(errno)).")
+        }
+        defer { close(fd) }
+
+        // Tamaño de bloque físico del device (para alinear escrituras).
+        var blockSize: UInt32 = 512
+        _ = ioctl(fd, 0x40046418 /* DKIOCGETBLOCKSIZE */, &blockSize)
+        let bs = Int(blockSize == 0 ? 512 : blockSize)
+        let chunk = max(bs, (4 * 1024 * 1024 / bs) * bs)   // ~4 MiB, múltiplo del bloque
+
+        var writtenTotal: Int64 = 0
+        while true {
+            let data = (try? input.read(upToCount: chunk)) ?? Data()
+            if data.isEmpty { break }
+
+            // Alinea el último bloque: rellena con ceros hasta un múltiplo del bloque.
+            var buf = data
+            if buf.count % bs != 0 {
+                buf.append(Data(count: bs - (buf.count % bs)))
+            }
+
+            let wrote: Int = buf.withUnsafeBytes { raw in
+                write(fd, raw.baseAddress, buf.count)
+            }
+            if wrote < 0 {
+                return (false, "Error de escritura en el device (errno \(errno)).")
+            }
+            writtenTotal += Int64(data.count)
+            progress(min(writtenTotal, total), total)
+        }
+
+        guard fcntl(fd, F_FULLFSYNC) == 0 else {
+            return (false, "No se pudo sincronizar el device (errno \(errno)).")
+        }
+        return (true, nil)
+    }
+
     // MARK: - Validación
 
     static func isValidWholeDiskBSD(_ bsd: String) -> Bool {

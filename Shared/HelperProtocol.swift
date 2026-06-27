@@ -25,7 +25,30 @@ import Foundation
                    reply: @escaping (Bool, String?) -> Void)
 
     /// Versión del helper instalado (para comprobar que app y helper concuerdan).
+    /// Escribe `isoPath` CRUDO (raw, estilo `dd`) sobre el disco `bsdName`.
+    ///
+    /// Para ISOs isohíbridos (Linux/BSD) que deben volcarse byte a byte al device.
+    /// Aplica las MISMAS salvaguardas que `eraseDisk` (S-4): revalida que el target
+    /// sea whole + externo + extraíble y que NO sea el disco de arranque, desmonta
+    /// el disco y escribe sobre `/dev/rdiskN`. El progreso se reporta por el canal
+    /// inverso (`HelperProgressProtocol`).
+    ///
+    /// - Parameters:
+    ///   - isoPath: ruta absoluta del archivo .iso a volcar.
+    ///   - bsdName: identificador BSD del disco completo, p. ej. "disk4".
+    ///   - reply: `(ok, mensajeDeError?)`.
+    func writeImage(isoPath: String,
+                    bsdName: String,
+                    reply: @escaping (Bool, String?) -> Void)
+
+    /// Versión del helper instalado (para comprobar que app y helper concuerdan).
     func helperVersion(reply: @escaping (String) -> Void)
+}
+
+/// Canal inverso de progreso: lo implementa la APP y lo invoca el HELPER durante
+/// una operación larga (escritura raw) para reportar bytes escritos en vivo.
+@objc public protocol HelperProgressProtocol {
+    func didWrite(bytes: Int64, of total: Int64)
 }
 
 /// Constantes compartidas app ↔ helper.

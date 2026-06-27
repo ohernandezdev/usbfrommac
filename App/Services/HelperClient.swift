@@ -117,6 +117,47 @@ public final class HelperClient {
             }
         }
     }
+
+    /// Escribe un ISO isohíbrido CRUDO sobre el disco (operación root larga).
+    /// Reporta progreso por el canal inverso (`onProgress`, en hilo de fondo).
+    /// Usa una conexión dedicada que exporta el receptor de progreso.
+    public func writeImage(isoPath: String, bsdName: String,
+                           onProgress: @escaping (Int64, Int64) -> Void) async throws {
+        let receiver = ProgressReceiver(onProgress)
+        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+            let once = ResumeOnce()
+            let conn = NSXPCConnection(machServiceName: HelperConstants.machServiceName, options: .privileged)
+            conn.remoteObjectInterface = NSXPCInterface(with: HelperProtocol.self)
+            conn.setCodeSigningRequirement(HelperConstants.helperCodeSigningRequirement)
+            // Exporta el receptor de progreso para que el helper nos llame de vuelta.
+            conn.exportedInterface = NSXPCInterface(with: HelperProgressProtocol.self)
+            conn.exportedObject = receiver
+            conn.invalidationHandler = { once.resume { cont.resume(throwing: HelperClientError.connectionFailed) } }
+            conn.interruptionHandler = { once.resume { cont.resume(throwing: HelperClientError.interrupted) } }
+            conn.resume()
+
+            guard let proxy = conn.remoteObjectProxyWithErrorHandler({ error in
+                once.resume { cont.resume(throwing: HelperClientError.remote(error.localizedDescription)) }
+            }) as? HelperProtocol else {
+                once.resume { cont.resume(throwing: HelperClientError.connectionFailed) }
+                conn.invalidate()
+                return
+            }
+            proxy.writeImage(isoPath: isoPath, bsdName: bsdName) { ok, message in
+                once.resume {
+                    if ok { cont.resume() }
+                    else { cont.resume(throwing: HelperClientError.remote(message ?? "Error desconocido al escribir la imagen.")) }
+                }
+            }
+        }
+    }
+}
+
+/// Receptor del canal inverso de progreso del helper (root → app).
+private final class ProgressReceiver: NSObject, HelperProgressProtocol {
+    private let onProgress: (Int64, Int64) -> Void
+    init(_ onProgress: @escaping (Int64, Int64) -> Void) { self.onProgress = onProgress }
+    func didWrite(bytes: Int64, of total: Int64) { onProgress(bytes, total) }
 }
 
 /// Garantiza que una continuación XPC se reanuda EXACTAMENTE una vez, aunque el
