@@ -171,9 +171,15 @@ final class HelperService: NSObject, HelperProtocol {
         let isInternal = (plist["Internal"] as? Bool) ?? true
         let ejectable = (plist["Ejectable"] as? Bool) ?? false
         let removable = (plist["RemovableMedia"] as? Bool) ?? false
+        // Defensa en profundidad (S-4): rechazar dispositivos virtuales / imágenes
+        // de disco aunque se presenten como externos+removibles.
+        let virtualOrPhysical = (plist["VirtualOrPhysical"] as? String) ?? ""
 
         guard whole else { return .failure("El target no es un disco físico completo.") }
         guard !isInternal else { return .failure("El target es un disco interno. Operación rechazada.") }
+        guard virtualOrPhysical.caseInsensitiveCompare("Virtual") != .orderedSame else {
+            return .failure("El target es un dispositivo virtual (imagen de disco). Operación rechazada.")
+        }
         guard ejectable || removable else {
             return .failure("El target no es un medio extraíble. Operación rechazada.")
         }

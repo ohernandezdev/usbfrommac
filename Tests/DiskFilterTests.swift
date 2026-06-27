@@ -91,6 +91,26 @@ final class DiskFilterTests: XCTestCase {
         XCTAssertFalse(filter.isEligible(dmg))
     }
 
+    func testVirtualInterfaceDiskImageIsExcluded() {
+        // CASO REAL (visto en hardware): los disk images de macOS reportan
+        // DADeviceProtocol="Virtual Interface" (NO "Disk Image") y DADeviceModel=
+        // "Disk Image". El filtro DEBE atraparlos por cualquiera de las dos señales.
+        let filter = DiskFilter(bootDiskBSDName: "disk0")
+        let img = candidate(bsd: "disk4", whole: true, isInternal: false,
+                            removable: true, ejectable: true,
+                            model: "Disk Image", proto: "Virtual Interface")
+        XCTAssertFalse(filter.isEligible(img))
+    }
+
+    func testVirtualModelAloneIsExcluded() {
+        // Aunque el protocolo viniese vacío/desconocido, model "Disk Image" basta.
+        let filter = DiskFilter(bootDiskBSDName: "disk0")
+        let img = candidate(bsd: "disk4", whole: true, isInternal: false,
+                            removable: true, ejectable: true,
+                            model: "Disk Image", proto: nil)
+        XCTAssertFalse(filter.isEligible(img))
+    }
+
     // MARK: Inclusiones legítimas
 
     func testExternalEjectableUSBIsEligible() {

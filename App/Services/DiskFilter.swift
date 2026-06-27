@@ -36,14 +36,29 @@ public struct DiskFilter {
         }
         guard c.isWholeDisk else { return false }   // solo discos completos
         guard !c.isInternal else { return false }   // jamás internos
-        // Excluir imágenes de disco montadas (.dmg, simuladores de iOS, cryptexes…):
-        // son "externas" y "removibles" pero NO son pendrives USB físicos.
-        if let proto = c.busProtocol, proto.caseInsensitiveCompare("Disk Image") == .orderedSame {
-            return false
-        }
+        // Excluir dispositivos NO físicos (imágenes de disco montadas, interfaces
+        // virtuales de VMs, cryptexes…): aparecen como externos+removibles pero no
+        // son pendrives USB. macOS los reporta con protocolo "Disk Image" o
+        // "Virtual Interface", y/o modelo "Disk Image".
+        if Self.isVirtualOrImage(c) { return false }
         guard c.isRemovable || c.isEjectable else { return false } // debe ser USB extraíble
         guard c.sizeBytes > 0 else { return false }
         return true
+    }
+
+    /// `true` si el candidato es una imagen de disco o un dispositivo virtual
+    /// (no un medio físico real). Se apoya en varias señales de DiskArbitration
+    /// porque ninguna por sí sola es suficiente (visto en hardware: los disk
+    /// images llegan con protocolo "Virtual Interface", no "Disk Image").
+    static func isVirtualOrImage(_ c: DiskCandidate) -> Bool {
+        if let p = c.busProtocol?.lowercased(),
+           p == "disk image" || p.contains("virtual") {
+            return true
+        }
+        if let m = c.deviceModel?.lowercased(), m == "disk image" {
+            return true
+        }
+        return false
     }
 
     /// Aplica el filtro a una lista cruda y devuelve `Disk` listos para la UI,
