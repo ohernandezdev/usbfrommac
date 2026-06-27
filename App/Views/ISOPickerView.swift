@@ -125,20 +125,28 @@ struct ISOPickerView: View {
     @ViewBuilder
     private func isoSummary(_ info: ISOInfo) -> some View {
         VStack(alignment: .leading, spacing: Carbon.Space.sm) {
-            statusRow(info.isWindowsInstaller ? "checkmark.seal.fill" : "exclamationmark.triangle.fill",
-                      info.isWindowsInstaller ? "iso.installerDetected"
-                                              : "iso.notInstaller",
-                      info.isWindowsInstaller ? Carbon.success : Carbon.warning)
-
-            if let wim = info.installWIMSizeBytes {
-                let txt = ByteCountFormatter.string(fromByteCount: Int64(wim), countStyle: .file)
-                statusRow("doc.fill",
-                          verbatim: info.requiresWIMSplit
-                              ? String(localized: "iso.wim.willSplit \(txt)")
-                              : String(localized: "iso.wim.fits \(txt)"),
-                          Carbon.inkMuted)
+            // Tipo de arranque detectado → determina la estrategia (copia vs. raw).
+            switch info.bootType {
+            case .windows:
+                statusRow("checkmark.seal.fill", "iso.type.windows", Carbon.success)
+            case .hybridRaw:
+                statusRow("checkmark.seal.fill", "iso.type.linux", Carbon.success)
+            case .elToritoOnly, .notBootable:
+                statusRow("xmark.octagon.fill", "iso.type.unsupported", Carbon.error)
             }
-            secureBootRow(info.secureBootConcern)
+
+            // El detalle de install.wim y Secure Boot solo aplica al flujo Windows.
+            if info.bootType == .windows {
+                if let wim = info.installWIMSizeBytes {
+                    let txt = ByteCountFormatter.string(fromByteCount: Int64(wim), countStyle: .file)
+                    statusRow("doc.fill",
+                              verbatim: info.requiresWIMSplit
+                                  ? String(localized: "iso.wim.willSplit \(txt)")
+                                  : String(localized: "iso.wim.fits \(txt)"),
+                              Carbon.inkMuted)
+                }
+                secureBootRow(info.secureBootConcern)
+            }
         }
         .carbonCard()
     }

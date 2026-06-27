@@ -26,7 +26,11 @@ struct ConfirmView: View {
                 }
                 .carbonCard(surface: Carbon.surface1)
 
-                labelField
+                // La etiqueta FAT32 solo aplica al flujo Windows; el raw (Linux)
+                // sobrescribe el disco con la imagen y no usa etiqueta.
+                if !coordinator.isRawFlow {
+                    labelField
+                }
 
                 Toggle(isOn: $coordinator.confirmedDestructive) {
                     Text("confirm.acknowledge \(disk.displayName)")

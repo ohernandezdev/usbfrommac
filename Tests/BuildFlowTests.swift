@@ -57,6 +57,14 @@ final class BuildFlowTests: XCTestCase {
         XCTAssertEqual(total, 1.0, accuracy: 0.0001)
     }
 
+    // La UI muestra las filas de fase según el tipo de ISO.
+    func testPhaseSequenceForBootType() {
+        XCTAssertEqual(BuildPhase.sequence(for: .windows), BuildPhase.ordered)
+        XCTAssertEqual(BuildPhase.sequence(for: .hybridRaw), BuildPhase.rawOrdered)
+        XCTAssertTrue(BuildPhase.sequence(for: .elToritoOnly).isEmpty)
+        XCTAssertTrue(BuildPhase.sequence(for: .notBootable).isEmpty)
+    }
+
     // MARK: Verificación por efecto del formateo (anti-cuelgue)
 
     func testFormatOKWhenReplyClean() {

@@ -105,7 +105,15 @@ public final class BuildCoordinator: ObservableObject {
         }
     }
 
-    public var canProceedFromISO: Bool { isoInfo?.isWindowsInstaller == true }
+    public var canProceedFromISO: Bool { isoInfo?.bootIsSupported == true }
+
+    /// `true` si el ISO se escribe crudo (Linux/isohíbrido) en vez de copiar a FAT32.
+    public var isRawFlow: Bool { isoInfo?.bootType == .hybridRaw }
+
+    /// Fases a mostrar en la pantalla de progreso, según el tipo de ISO.
+    public var activePhases: [BuildPhase] {
+        BuildPhase.sequence(for: isoInfo?.bootType ?? .windows)
+    }
 
     public func verifyHash() {
         guard let url = isoURL, !expectedHash.trimmingCharacters(in: .whitespaces).isEmpty else { return }
@@ -161,7 +169,9 @@ public final class BuildCoordinator: ObservableObject {
     }
 
     public var canStartBuild: Bool {
-        selectedDisk != nil && confirmedDestructive && FAT32Label.isValid(label)
+        guard selectedDisk != nil, confirmedDestructive else { return false }
+        // El flujo raw (Linux) no usa etiqueta FAT32; solo Windows la exige.
+        return isRawFlow || FAT32Label.isValid(label)
     }
 
     // MARK: - Paso 4: Build

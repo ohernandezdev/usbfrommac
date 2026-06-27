@@ -385,6 +385,24 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Cambiar ISO…" } }
       }
     },
+    "iso.type.windows" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Windows installer detected — files copied to FAT32." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Instalador de Windows detectado — se copia a FAT32." } }
+      }
+    },
+    "iso.type.linux" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Bootable Linux/other ISO — written whole to the USB." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "ISO de Linux/otro booteable — se escribe completa al USB." } }
+      }
+    },
+    "iso.type.unsupported" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This ISO isn't bootable in a supported way." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Este ISO no es booteable de forma compatible." } }
+      }
+    },
     "iso.installerDetected" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Windows installer detected." } },

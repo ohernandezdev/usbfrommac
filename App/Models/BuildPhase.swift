@@ -18,6 +18,15 @@ public enum BuildPhase: Equatable {
     /// Fases del flujo raw (Linux/isohíbrido), en orden.
     public static let rawOrdered: [BuildPhase] = [.writingImage, .finalizing]
 
+    /// Secuencia de fases a mostrar según el tipo de arranque del ISO.
+    public static func sequence(for bootType: ISOBootType) -> [BuildPhase] {
+        switch bootType {
+        case .windows:                  return ordered
+        case .hybridRaw:                return rawOrdered
+        case .elToritoOnly, .notBootable: return []
+        }
+    }
+
     /// Título legible para la UI (localizado ES/EN vía String Catalog).
     public var title: String {
         switch self {

@@ -31,7 +31,7 @@ struct BuildProgressView: View {
             Text(verbatim: coordinator.progress.detail).carbon(.bodySm).foregroundStyle(Carbon.inkMuted)
 
             VStack(alignment: .leading, spacing: Carbon.Space.sm) {
-                ForEach(Array(BuildPhase.ordered.enumerated()), id: \.offset) { _, p in
+                ForEach(Array(coordinator.activePhases.enumerated()), id: \.offset) { _, p in
                     phaseRow(p)
                 }
             }
@@ -44,7 +44,8 @@ struct BuildProgressView: View {
                 Spacer()
                 Button("common.cancel") { coordinator.cancel() }
                     .buttonStyle(CarbonButton(kind: .tertiary))
-                    .disabled(!coordinator.isBuilding)
+                    // El dd raw no es interrumpible → no se puede cancelar a mitad.
+                    .disabled(!coordinator.isBuilding || coordinator.progress.phase == .writingImage)
             }
             .padding(.top, Carbon.Space.sm)
             .background(Carbon.canvas)
@@ -167,8 +168,9 @@ struct BuildProgressView: View {
     private enum PhaseState { case done, active, pending }
 
     private func phaseState(_ p: BuildPhase) -> PhaseState {
-        guard let current = BuildPhase.ordered.firstIndex(of: phase),
-              let idx = BuildPhase.ordered.firstIndex(of: p) else {
+        let phases = coordinator.activePhases
+        guard let current = phases.firstIndex(of: phase),
+              let idx = phases.firstIndex(of: p) else {
             return phase == .done ? .done : .pending
         }
         if idx < current { return .done }
