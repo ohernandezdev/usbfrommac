@@ -87,20 +87,29 @@ public final class BuildCoordinator: ObservableObject {
         background { [weak self] in
             guard let self else { return }
             self.detachISOIfNeeded()
-            do {
-                let mounted = try self.iso.attach(url)
-                self.mountedISO = mounted
-                let info = self.iso.inspect(mounted, isoURL: url)
-                self.onMain {
-                    self.isoInfo = info
-                    self.isInspectingISO = false
-                    if !FAT32Label.isValid(self.label) { self.label = "WIN11" }
-                }
-            } catch {
-                self.onMain {
-                    self.isInspectingISO = false
-                    self.isoError = error.localizedDescription
-                }
+
+            // El montaje es OPCIONAL: solo el flujo Windows necesita inspeccionar
+            // archivos (setup.exe, install.wim). Muchos ISOs Linux isohíbridos NO se
+            // montan en macOS ("attach failed") — eso NO es un error: el tipo de
+            // arranque y el tamaño se obtienen leyendo el archivo, y el flujo raw
+            // escribe el .iso directo. Si no monta, seguimos sin montaje.
+            let mounted = try? self.iso.attach(url)
+            self.mountedISO = mounted
+
+            let info: ISOInfo
+            if let mounted {
+                info = self.iso.inspect(mounted, isoURL: url)
+            } else {
+                let bootType = ISOBootDetector.detect(isoAt: url, isWindows: false)
+                let size = (try? FileManager.default.attributesOfItem(atPath: url.path)[.size] as? NSNumber)??.uint64Value ?? 0
+                info = ISOInfo(url: url, sizeBytes: size, volumeName: nil,
+                               isWindowsInstaller: false, installWIMSizeBytes: nil,
+                               usesESD: false, newestBootFileDate: nil, bootType: bootType)
+            }
+            self.onMain {
+                self.isoInfo = info
+                self.isInspectingISO = false
+                if !FAT32Label.isValid(self.label) { self.label = "WIN11" }
             }
         }
     }
@@ -177,9 +186,10 @@ public final class BuildCoordinator: ObservableObject {
     // MARK: - Paso 4: Build
 
     public func startBuild() {
-        guard let disk = selectedDisk,
-              let mounted = mountedISO,
-              let info = isoInfo else { return }
+        // El montaje (mountedISO) solo lo necesita el flujo Windows; el raw escribe
+        // el archivo directo. Por eso no se exige aquí.
+        guard let disk = selectedDisk, let info = isoInfo else { return }
+        let mounted = mountedISO
         let safeLabel = FAT32Label.sanitize(label)
         cancelToken.reset()
         isBuilding = true
@@ -233,9 +243,11 @@ public final class BuildCoordinator: ObservableObject {
     // MARK: - Orquestación (hilo de fondo)
 
     /// Despacha al flujo correcto según el tipo de arranque del ISO.
-    private func runBuild(disk: Disk, mounted: MountedISO, info: ISOInfo, label: String) throws {
+    private func runBuild(disk: Disk, mounted: MountedISO?, info: ISOInfo, label: String) throws {
         switch info.bootType {
         case .windows:
+            // El flujo Windows necesita el ISO montado para copiar sus archivos.
+            guard let mounted else { throw BuildError.usbVolumeNotFound }
             try runWindowsBuild(disk: disk, mounted: mounted, info: info, label: label)
         case .hybridRaw:
             try runRawBuild(disk: disk, info: info)

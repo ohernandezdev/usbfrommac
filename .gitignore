@@ -10,5 +10,8 @@ DerivedData/
 App/Resources/wimlib-imagex
 App/Resources/*.dylib
 
+# Harness/borradores temporales
+scratchpad/
+
 # macOS
 .DS_Store
