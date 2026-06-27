@@ -1,7 +1,7 @@
 import SwiftUI
 import AppKit
 
-/// Sistema de diseño de WinUSB Mac.
+/// Sistema de diseño de USB from Mac.
 ///
 /// Lenguaje visual: macOS nativo moderno (estilo Sonoma / Raycast / Linear) —
 /// superficies redondeadas con profundidad por sombra suave (no hairlines duros),

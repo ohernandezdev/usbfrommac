@@ -1,6 +1,6 @@
 # Dogfooding — hallazgos y fixes (sesión inicial)
 
-Notas de la primera prueba en hardware real de **WinUSB Mac**, creando un USB
+Notas de la primera prueba en hardware real de **USB from Mac**, creando un USB
 booteable de Windows 11 (ISO `Win11_25H2_Spanish_x64_v2.iso`) sobre un pendrive
 Lexar de 62 GB.
 
@@ -36,13 +36,13 @@ reales que solo aparecen ejecutando contra un USB físico.
 ### 2. "Couldn't communicate with a helper application"
 - **Síntoma:** tras aprobar el daemon, la conexión XPC se invalidaba al instante.
 - **Causa raíz:** un target *tool* sin `Info.plist` se firma con el **nombre del
-  ejecutable** como identifier (`WinUSBMacHelper`), pero el requisito de firma
-  cruzada exigía `identifier "com.omar.winusbmac.helper"`. No coincidían.
+  ejecutable** como identifier (`UsbFromMacHelper`), pero el requisito de firma
+  cruzada exigía `identifier "com.omarhernandez.usbfrommac.helper"`. No coincidían.
   Verificado con `codesign -dvvv`.
 - **Fix:** `scripts/dogfood.sh` re-firma el helper con
-  `--identifier com.omar.winusbmac.helper`.
+  `--identifier com.omarhernandez.usbfrommac.helper`.
 - **Nota:** al re-firmar, hay que **matar el daemon viejo** (`sudo killall
-  WinUSBMacHelper`) o launchd sigue ejecutando el binario anterior en memoria.
+  UsbFromMacHelper`) o launchd sigue ejecutando el binario anterior en memoria.
 
 ### 3. Mensaje de error crudo en el primer arranque
 - **Síntoma:** "No se pudo registrar el componente con privilegios: Operation

@@ -249,8 +249,8 @@
     },
     "error.helper.requiresApproval" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Authorize “WinUSB Mac” in System Settings → General → Login Items to allow formatting." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Autoriza «WinUSB Mac» en Ajustes del Sistema → General → Elementos de inicio para poder formatear." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Authorize “USB from Mac” in System Settings → General → Login Items to allow formatting." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Autoriza «USB from Mac» en Ajustes del Sistema → General → Elementos de inicio para poder formatear." } }
       }
     },
     "error.iso.attachFailed %@" : {

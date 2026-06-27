@@ -22,7 +22,7 @@ TEAM="C34D3V8484"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
-APP_NAME="WinUSBMac.app"
+APP_NAME="UsbFromMac.app"
 INSTALL="/Applications/$APP_NAME"
 
 # 1. wimlib (opcional pero necesario para dividir install.wim) ----------------
@@ -51,7 +51,7 @@ xcodegen generate
 
 echo "▸ Compilando firmado (Developer ID + hardened runtime)…"
 rm -rf build/dd
-xcodebuild -project WinUSBMac.xcodeproj -scheme WinUSBMac -configuration Release \
+xcodebuild -project UsbFromMac.xcodeproj -scheme UsbFromMac -configuration Release \
   -derivedDataPath build/dd \
   CODE_SIGN_STYLE=Manual \
   CODE_SIGN_IDENTITY="$IDENTITY" \
@@ -65,11 +65,11 @@ APP="build/dd/Build/Products/Release/$APP_NAME"
 # 3. Re-firmar helper + app (sella el bundle con hardened runtime) ------------
 echo "▸ Re-firmando helper y app…"
 # --identifier: un tool sin Info.plist se firma con el nombre del ejecutable
-# ("WinUSBMacHelper"); el requisito XPC exige "com.omar.winusbmac.helper".
+# ("UsbFromMacHelper"); el requisito XPC exige "com.omarhernandez.usbfrommac.helper".
 codesign --force --options runtime --timestamp \
-  --identifier com.omar.winusbmac.helper \
+  --identifier com.omarhernandez.usbfrommac.helper \
   --entitlements Helper/Helper.entitlements --sign "$IDENTITY" \
-  "$APP/Contents/MacOS/WinUSBMacHelper"
+  "$APP/Contents/MacOS/UsbFromMacHelper"
 codesign --force --options runtime --timestamp \
   --entitlements App/App.entitlements --sign "$IDENTITY" "$APP"
 echo "▸ Verificando firma…"
@@ -77,8 +77,8 @@ codesign --verify --deep --strict --verbose=2 "$APP"
 
 # 4. Instalar en /Applications -----------------------------------------------
 echo "▸ Instalando en $INSTALL…"
-osascript -e 'tell application "WinUSBMac" to quit' 2>/dev/null || true
-pkill -x WinUSBMac 2>/dev/null || true
+osascript -e 'tell application "UsbFromMac" to quit' 2>/dev/null || true
+pkill -x UsbFromMac 2>/dev/null || true
 rm -rf "$INSTALL"
 cp -R "$APP" "$INSTALL"
 
@@ -86,6 +86,6 @@ echo
 echo "✓ Instalada: $INSTALL"
 echo "  Ábrela:  open \"$INSTALL\""
 echo "  Si pide aprobar el componente con privilegios:"
-echo "    Ajustes del Sistema → General → Elementos de inicio → activa «WinUSB Mac»."
+echo "    Ajustes del Sistema → General → Elementos de inicio → activa «USB from Mac»."
 echo "  Logs del helper en otra terminal:"
-echo "    log stream --predicate 'process == \"WinUSBMacHelper\"' --info"
+echo "    log stream --predicate 'process == \"UsbFromMacHelper\"' --info"

@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct WinUSBMacApp: App {
+struct UsbFromMacApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

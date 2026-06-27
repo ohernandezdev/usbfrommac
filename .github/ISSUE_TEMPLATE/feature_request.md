@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an idea for WinUSB Mac
+about: Suggest an idea for USB from Mac
 title: "[Feature] "
 labels: enhancement
 ---

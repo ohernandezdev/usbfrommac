@@ -1,5 +1,5 @@
 import XCTest
-@testable import WinUSBMac
+@testable import UsbFromMac
 
 /// Tests de `DiskService` con una fuente fake: verifican que el servicio solo
 /// publica USB elegibles y que reacciona a conexión/desconexión en vivo (RF-1),

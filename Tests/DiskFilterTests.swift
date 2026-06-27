@@ -1,5 +1,5 @@
 import XCTest
-@testable import WinUSBMac
+@testable import UsbFromMac
 
 /// Tests del corazón de seguridad de la app (CA-1 / CA-6 / S-1):
 /// debe ser IMPOSIBLE que el disco interno o el de arranque pasen el filtro,

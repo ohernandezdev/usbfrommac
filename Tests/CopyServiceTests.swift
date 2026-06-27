@@ -1,5 +1,5 @@
 import XCTest
-@testable import WinUSBMac
+@testable import UsbFromMac
 
 final class CopyServiceTests: XCTestCase {
 

@@ -8,7 +8,7 @@ Closes #
 
 ## Checklist
 
-- [ ] Tests pass locally (`xcodebuild test -scheme WinUSBMac -destination 'platform=macOS'`).
+- [ ] Tests pass locally (`xcodebuild test -scheme UsbFromMac -destination 'platform=macOS'`).
 - [ ] Preserves the destructive-operation safeguards **S-2 … S-5** (explicit confirmation, disk re-validation, helper-side check, fail-safe error handling).
 - [ ] Does **not** touch or expose the internal/boot disk; the disk whitelist remains intact.
 - [ ] Any change to disk enumeration or the privileged helper has new/updated tests proving the internal disk and virtual/disk-image devices stay excluded.

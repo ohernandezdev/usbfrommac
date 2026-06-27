@@ -3,7 +3,7 @@
 # package-wimlib.sh — empaqueta wimlib-imagex + sus dylibs dentro de App/Resources
 # y los hace autocontenidos (@executable_path) para que la app sea distribuible.
 #
-# wimlib es GPLv3. WinUSB Mac es open source (GPLv3), así que empaquetar el binario
+# wimlib es GPLv3. USB from Mac es open source (GPLv3), así que empaquetar el binario
 # y ejecutarlo como subproceso es perfectamente compatible.
 #
 # Uso:

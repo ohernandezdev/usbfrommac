@@ -1,4 +1,4 @@
-# WinUSB Mac
+# USB from Mac
 
 Create a bootable Windows 11 USB drive from an ISO on macOS — safely. A minimalist "Rufus for Mac".
 
@@ -6,7 +6,7 @@ Create a bootable Windows 11 USB drive from an ISO on macOS — safely. A minima
 [![License: GPLv3](https://img.shields.io/badge/license-GPLv3-green.svg)](LICENSE)
 [![Language: Swift](https://img.shields.io/badge/language-Swift%205.9-orange.svg)](https://swift.org)
 
-WinUSB Mac is a native macOS app (Swift 5.9 + SwiftUI) that turns a Windows 11 ISO into a bootable USB stick — without Boot Camp, without third-party closed binaries, and without ever putting your internal disk at risk.
+USB from Mac is a native macOS app (Swift 5.9 + SwiftUI) that turns a Windows 11 ISO into a bootable USB stick — without Boot Camp, without third-party closed binaries, and without ever putting your internal disk at risk.
 
 ## Table of Contents
 
@@ -36,11 +36,11 @@ WinUSB Mac is a native macOS app (Swift 5.9 + SwiftUI) that turns a Windows 11 I
 
 ## Safety model
 
-WinUSB Mac formats disks and runs code as root, so safety is the core of its design rather than an afterthought. Two mechanisms make it hard to lose data:
+USB from Mac formats disks and runs code as root, so safety is the core of its design rather than an afterthought. Two mechanisms make it hard to lose data:
 
 **1. Internal-disk whitelist.** The disk enumerator (`DiskFilter` / `DiskArbitrationSource`) only ever surfaces candidates that are `external` + `physical` + removable USB media. The system boot disk is filtered out explicitly, and mounted disk images, cryptexes and virtual devices (`busProtocol == "Disk Image"`, `Virtual`) are rejected too. The internal disk physically cannot appear in the picker.
 
-**2. Privilege isolation.** Only `diskutil eraseDisk` needs root. It lives in a minimal daemon (`WinUSBMacHelper`) registered with `SMAppService` and invoked over XPC. The helper independently re-checks that its target is external/removable before erasing (safeguard **S-4**). The rest of the pipeline — copy, split, verify, eject — runs unprivileged.
+**2. Privilege isolation.** Only `diskutil eraseDisk` needs root. It lives in a minimal daemon (`UsbFromMacHelper`) registered with `SMAppService` and invoked over XPC. The helper independently re-checks that its target is external/removable before erasing (safeguard **S-4**). The rest of the pipeline — copy, split, verify, eject — runs unprivileged.
 
 On top of that, the build flow enforces the destructive-operation safeguards **S-2 … S-5**: an explicit confirmation showing the exact disk name and size (S-2), re-validation of the disk identifier *immediately* before formatting (S-3), the helper-side external-media check (S-4), and fail-safe error handling that aborts cleanly with no half-formatted state (S-5).
 
@@ -68,7 +68,7 @@ brew install xcodegen wimlib
 xcodegen generate
 
 # 3. Open and build
-open WinUSBMac.xcodeproj
+open UsbFromMac.xcodeproj
 ```
 
 The app bundles `wimlib-imagex` and `libwim.*.dylib` under `App/Resources/`; these must be present (and signed) for the split step to work. They are copied into `Contents/Resources` of the app bundle as an explicit resource phase.
@@ -79,7 +79,7 @@ For a **signed local build** (Developer ID, for running on real hardware) use th
 scripts/dogfood.sh
 ```
 
-It signs the app and re-signs the helper with the correct identifier (`com.omar.winusbmac.helper`) — see [docs/DOGFOODING.md](docs/DOGFOODING.md) for the gotchas around `SMAppService`, XPC and the on-demand daemon. Notarized distribution outside the Mac App Store is planned but not yet shipped.
+It signs the app and re-signs the helper with the correct identifier (`com.omarhernandez.usbfrommac.helper`) — see [docs/DOGFOODING.md](docs/DOGFOODING.md) for the gotchas around `SMAppService`, XPC and the on-demand daemon. Notarized distribution outside the Mac App Store is planned but not yet shipped.
 
 ## How it works
 
@@ -96,7 +96,7 @@ The interface is fully localized in **English** and **Spanish**. Code comments f
 
 ## License
 
-WinUSB Mac is released under the **GNU General Public License v3.0** — see [LICENSE](LICENSE) for the full text.
+USB from Mac is released under the **GNU General Public License v3.0** — see [LICENSE](LICENSE) for the full text.
 
 GPLv3 is required because the app bundles and distributes [wimlib](https://wimlib.net), which is itself GPLv3-licensed. Any redistribution must keep the source available under the same terms.
 

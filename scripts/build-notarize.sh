@@ -33,7 +33,7 @@ xcodegen generate
 
 echo "▸ 3/6 Compilando Release (hardened runtime)…"
 rm -rf build/dd
-xcodebuild -project WinUSBMac.xcodeproj -scheme WinUSBMac -configuration Release \
+xcodebuild -project UsbFromMac.xcodeproj -scheme UsbFromMac -configuration Release \
   -derivedDataPath build/dd \
   CODE_SIGN_STYLE=Manual \
   CODE_SIGN_IDENTITY="$IDENTITY" \
@@ -41,18 +41,18 @@ xcodebuild -project WinUSBMac.xcodeproj -scheme WinUSBMac -configuration Release
   ENABLE_HARDENED_RUNTIME=YES \
   clean build
 
-APP="build/dd/Build/Products/Release/WinUSBMac.app"
+APP="build/dd/Build/Products/Release/UsbFromMac.app"
 
 echo "▸ 4/6 Re-firmando helper embebido y app…"
 codesign --force --options runtime --timestamp \
   --entitlements Helper/Helper.entitlements --sign "$IDENTITY" \
-  "$APP/Contents/MacOS/WinUSBMacHelper"
+  "$APP/Contents/MacOS/UsbFromMacHelper"
 codesign --force --options runtime --timestamp \
   --entitlements App/App.entitlements --sign "$IDENTITY" "$APP"
 
 echo "▸ 5/6 Notarizando…"
 mkdir -p build
-ZIP="build/WinUSBMac.zip"
+ZIP="build/UsbFromMac.zip"
 ditto -c -k --keepParent "$APP" "$ZIP"
 xcrun notarytool submit "$ZIP" --keychain-profile "$PROFILE" --wait
 

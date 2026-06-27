@@ -54,10 +54,10 @@ import Foundation
 /// Constantes compartidas app ↔ helper.
 public enum HelperConstants {
     /// Nombre del Mach service (debe coincidir con el plist launchd y SMAppService).
-    public static let machServiceName = "com.omar.winusbmac.helper"
+    public static let machServiceName = "com.omarhernandez.usbfrommac.helper"
 
     /// Nombre del plist launchd embebido (lo usa SMAppService.daemon(plistName:)).
-    public static let plistName = "com.omar.winusbmac.helper.plist"
+    public static let plistName = "com.omarhernandez.usbfrommac.helper.plist"
 
     /// Versión del contrato/helper.
     public static let version = "1.0.0"
@@ -65,8 +65,8 @@ public enum HelperConstants {
     /// Longitud máxima de una etiqueta FAT32.
     public static let maxFAT32LabelLength = 11
 
-    public static let appBundleID = "com.omar.winusbmac"
-    public static let helperBundleID = "com.omar.winusbmac.helper"
+    public static let appBundleID = "com.omarhernandez.usbfrommac"
+    public static let helperBundleID = "com.omarhernandez.usbfrommac.helper"
 
     // Apple Team ID: OU del certificado Developer ID; valida la firma cruzada XPC.
     // (Team de Omar — Developer ID Application C34D3V8484.) Con firma ad-hoc local

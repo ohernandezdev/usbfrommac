@@ -3,9 +3,9 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleName</key>
-	<string>WinUSB Mac</string>
+	<string>USB from Mac</string>
 	<key>CFBundleDisplayName</key>
-	<string>WinUSB Mac</string>
+	<string>USB from Mac</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>en</string>
 	<key>CFBundleLocalizations</key>
@@ -30,6 +30,6 @@
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
-	<string>WinUSB Mac — GPLv3. Incluye/usa wimlib (GPLv3).</string>
+	<string>USB from Mac — GPLv3. Incluye/usa wimlib (GPLv3).</string>
 </dict>
 </plist>
