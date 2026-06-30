@@ -1,19 +1,19 @@
 import Foundation
 import Combine
 
-/// Orquestador del flujo completo (la "máquina de estados" del wizard y del build).
+/// Orchestrator for the whole flow (the wizard's and the build's "state machine").
 ///
-/// Garantías de seguridad clave que viven aquí:
-///   - S-3: re-validación JIT del disco (id + tamaño) JUSTO antes de formatear.
-///   - S-5: cualquier fallo o cancelación desmonta el ISO y no deja formateos a medias.
+/// Key safety guarantees that live here:
+///   - S-3: JIT re-validation of the disk (id + size) JUST before formatting.
+///   - S-5: any failure or cancellation detaches the ISO and leaves no half-done formats.
 ///
-/// No es `@MainActor`: el trabajo pesado corre en un hilo de fondo y las
-/// publicaciones a SwiftUI se marshalizan a main vía `onMain`.
+/// Not `@MainActor`: the heavy work runs on a background thread and the
+/// publications to SwiftUI are marshalled to main via `onMain`.
 public final class BuildCoordinator: ObservableObject {
 
     public enum Step: Equatable { case selectISO, selectDisk, confirm, build }
 
-    // Navegación
+    // Navigation
     @Published public var step: Step = .selectISO
 
     // ISO
@@ -22,14 +22,14 @@ public final class BuildCoordinator: ObservableObject {
     @Published public private(set) var isInspectingISO = false
     @Published public private(set) var isoError: String?
 
-    // Verificación de hash (opcional)
+    // Hash verification (optional)
     @Published public var expectedHash: String = ""
     @Published public private(set) var computedHash: String?
     @Published public private(set) var hashMatches: Bool?
     @Published public private(set) var isHashing = false
     @Published public private(set) var hashProgress: Double = 0
 
-    // Disco / etiqueta / confirmación
+    // Disk / label / confirmation
     @Published public var selectedDisk: Disk?
     @Published public var label: String = "WIN11"
     @Published public var confirmedDestructive = false
@@ -38,12 +38,12 @@ public final class BuildCoordinator: ObservableObject {
     @Published public private(set) var progress = BuildProgress(phase: .idle, phaseFraction: 0, detail: "")
     @Published public private(set) var isBuilding = false
     @Published public private(set) var finished = false
-    /// Instante en que empezó la fase ACTUAL (para el "heartbeat"/tiempo transcurrido
-    /// de fases sin sub-progreso, p. ej. Formatear).
+    /// Instant when the CURRENT phase started (for the "heartbeat"/elapsed time
+    /// of phases without sub-progress, e.g. Formatting).
     @Published public private(set) var phaseStartedAt: Date?
     private var lastProgressPhase: BuildPhase?
 
-    // Medidores de velocidad por fase (bytes/seg suavizados).
+    // Per-phase speed meters (smoothed bytes/sec).
     private let copyMeter = RateMeter()
     private let splitMeter = RateMeter()
     private let rawMeter = RateMeter()
@@ -74,7 +74,7 @@ public final class BuildCoordinator: ObservableObject {
         self.helper = helper
     }
 
-    // MARK: - Paso 1: ISO
+    // MARK: - Step 1: ISO
 
     public func selectISO(_ url: URL) {
         isoURL = url
@@ -88,11 +88,11 @@ public final class BuildCoordinator: ObservableObject {
             guard let self else { return }
             self.detachISOIfNeeded()
 
-            // El montaje es OPCIONAL: solo el flujo Windows necesita inspeccionar
-            // archivos (setup.exe, install.wim). Muchos ISOs Linux isohíbridos NO se
-            // montan en macOS ("attach failed") — eso NO es un error: el tipo de
-            // arranque y el tamaño se obtienen leyendo el archivo, y el flujo raw
-            // escribe el .iso directo. Si no monta, seguimos sin montaje.
+            // Mounting is OPTIONAL: only the Windows flow needs to inspect
+            // files (setup.exe, install.wim). Many isohybrid Linux ISOs do NOT
+            // mount on macOS ("attach failed") — that is NOT an error: the boot
+            // type and the size are obtained by reading the file, and the raw flow
+            // writes the .iso directly. If it doesn't mount, we carry on unmounted.
             let mounted = try? self.iso.attach(url)
             self.mountedISO = mounted
 
@@ -116,10 +116,10 @@ public final class BuildCoordinator: ObservableObject {
 
     public var canProceedFromISO: Bool { isoInfo?.bootIsSupported == true }
 
-    /// `true` si el ISO se escribe crudo (Linux/isohíbrido) en vez de copiar a FAT32.
+    /// `true` if the ISO is written raw (Linux/isohybrid) instead of copied to FAT32.
     public var isRawFlow: Bool { isoInfo?.bootType == .hybridRaw }
 
-    /// Fases a mostrar en la pantalla de progreso, según el tipo de ISO.
+    /// Phases to show on the progress screen, depending on the ISO type.
     public var activePhases: [BuildPhase] {
         BuildPhase.sequence(for: isoInfo?.bootType ?? .windows)
     }
@@ -149,15 +149,15 @@ public final class BuildCoordinator: ObservableObject {
         }
     }
 
-    // MARK: - Paso 2: Disco
+    // MARK: - Step 2: Disk
 
     public func goToDiskSelection() {
         diskService.start()
         step = .selectDisk
     }
 
-    /// Navegación hacia atrás desde la barra de pasos: solo a pasos ya visitados
-    /// y nunca durante un build en curso (no se interrumpe una operación destructiva).
+    /// Backward navigation from the step bar: only to already-visited steps
+    /// and never during a build in progress (a destructive operation is not interrupted).
     public func goTo(step target: Step) {
         guard !isBuilding else { return }
         let order: [Step] = [.selectISO, .selectDisk, .confirm, .build]
@@ -168,7 +168,7 @@ public final class BuildCoordinator: ObservableObject {
         step = target
     }
 
-    // MARK: - Paso 3: Confirmación
+    // MARK: - Step 3: Confirmation
 
     public func goToConfirm() {
         guard selectedDisk != nil else { return }
@@ -178,16 +178,37 @@ public final class BuildCoordinator: ObservableObject {
     }
 
     public var canStartBuild: Bool {
-        guard selectedDisk != nil, confirmedDestructive else { return false }
-        // El flujo raw (Linux) no usa etiqueta FAT32; solo Windows la exige.
-        return isRawFlow || FAT32Label.isValid(label)
+        guard let disk = selectedDisk, confirmedDestructive else { return false }
+        if isRawFlow {
+            // The raw flow (Linux) doesn't use a FAT32 label, but the USB MUST fit the
+            // whole ISO (A2): otherwise we don't let the write start.
+            guard let info = isoInfo, disk.fitsRawImage(ofBytes: info.sizeBytes) else { return false }
+            return true
+        }
+        return FAT32Label.isValid(label)
     }
 
-    // MARK: - Paso 4: Build
+    /// `true` if the flow is raw and the chosen USB does NOT fit the image (blocking, A2).
+    /// The UI uses this to explain why the button is disabled.
+    public var rawDiskTooSmall: Bool {
+        guard isRawFlow, let disk = selectedDisk, let info = isoInfo else { return false }
+        return !disk.fitsRawImage(ofBytes: info.sizeBytes)
+    }
+
+    /// Message with sizes for the "USB too small" banner in Confirm (A2), or `nil` when
+    /// it doesn't apply. Reuses the same i18n key as the `BuildError`.
+    public var rawDiskTooSmallMessage: String? {
+        guard rawDiskTooSmall, let disk = selectedDisk, let info = isoInfo else { return nil }
+        let have = ByteCountFormatter.string(fromByteCount: Int64(disk.sizeBytes), countStyle: .file)
+        let need = ByteCountFormatter.string(fromByteCount: Int64(info.sizeBytes), countStyle: .file)
+        return loc("error.build.usbTooSmall \(have) \(need)")
+    }
+
+    // MARK: - Step 4: Build
 
     public func startBuild() {
-        // El montaje (mountedISO) solo lo necesita el flujo Windows; el raw escribe
-        // el archivo directo. Por eso no se exige aquí.
+        // The mount (mountedISO) is only needed by the Windows flow; the raw flow
+        // writes the file directly. That's why it's not required here.
         guard let disk = selectedDisk, let info = isoInfo else { return }
         let mounted = mountedISO
         let safeLabel = FAT32Label.sanitize(label)
@@ -227,7 +248,7 @@ public final class BuildCoordinator: ObservableObject {
 
     public func cancel() { cancelToken.cancel() }
 
-    /// Reinicia el wizard para crear otro USB.
+    /// Resets the wizard to create another USB.
     public func reset() {
         cancelToken.reset()
         detachISOIfNeeded()
@@ -240,31 +261,31 @@ public final class BuildCoordinator: ObservableObject {
         step = .selectISO
     }
 
-    // MARK: - Orquestación (hilo de fondo)
+    // MARK: - Orchestration (background thread)
 
-    /// Despacha al flujo correcto según el tipo de arranque del ISO.
+    /// Dispatches to the correct flow based on the ISO's boot type.
     private func runBuild(disk: Disk, mounted: MountedISO?, info: ISOInfo, label: String) throws {
         switch info.bootType {
         case .windows:
-            // El flujo Windows necesita el ISO montado para copiar sus archivos.
+            // The Windows flow needs the ISO mounted to copy its files.
             guard let mounted else { throw BuildError.usbVolumeNotFound }
             try runWindowsBuild(disk: disk, mounted: mounted, info: info, label: label)
         case .hybridRaw:
             try runRawBuild(disk: disk, info: info)
         case .elToritoOnly, .notBootable:
-            // No debería llegar aquí (el wizard filtra antes), pero por seguridad.
+            // Shouldn't get here (the wizard filters earlier), but just to be safe.
             throw BuildError.unsupportedISO
         }
     }
 
-    /// Flujo Windows: formatear FAT32 → copiar → dividir install.wim → finalizar.
+    /// Windows flow: format FAT32 → copy → split install.wim → finalize.
     private func runWindowsBuild(disk: Disk, mounted: MountedISO, info: ISOInfo, label: String) throws {
         let cancelled: () -> Bool = { [cancelToken] in cancelToken.isCancelled }
         func checkpoint() throws { if cancelled() { throw CancellationSignal() } }
 
-        // ---- Fase 1: Formatear ----
+        // ---- Phase 1: Format ----
         setProgress(.formatting, 0.1, loc("build.detail.revalidating"))
-        // S-3: el identificador puede haber cambiado de dueño tras una reconexión.
+        // S-3: the identifier may have changed owner after a reconnection.
         guard DiskRevalidation.isStillValid(selected: disk, in: diskService.snapshot()) else {
             throw BuildError.diskChanged
         }
@@ -274,19 +295,19 @@ public final class BuildCoordinator: ObservableObject {
         try helper.registerIfNeeded()
         try checkpoint()
 
-        // Cierra el hueco del "volumen viejo con la misma etiqueta": si ya hay un
-        // /Volumes/<label> montado (de un intento previo u otro disco), desmóntalo
-        // antes de formatear, para que el único que aparezca sea el RECIÉN formateado
-        // y la verificación por efecto no se confunda.
+        // Close the "old volume with the same label" gap: if there's already a
+        // /Volumes/<label> mounted (from a previous attempt or another disk), unmount
+        // it before formatting, so the only one that appears is the FRESHLY formatted
+        // one and the verification-by-effect doesn't get confused.
         let labelMount = "/Volumes/\(label)"
         if FileManager.default.fileExists(atPath: labelMount) {
             _ = Subprocess.run("/usr/sbin/diskutil", ["unmount", "force", labelMount])
         }
 
         setProgress(.formatting, 0.5, loc("build.detail.formatting \(disk.displayName) \(disk.sizeDescription)"))
-        // Lanza el formateo (XPC) y avanza EN CUANTO el volumen formateado aparece,
-        // sin esperar el reply (que el helper puede perder al salir). Verificación
-        // por efecto instantánea (política: EraseDecision).
+        // Kick off the format (XPC) and move on AS SOON AS the formatted volume
+        // appears, without waiting for the reply (which the helper may lose on exit).
+        // Instant verification-by-effect (policy: EraseDecision).
         let usbVolume: URL
         switch formatAndAwaitVolume(bsdName: disk.id, label: label, timeout: 180) {
         case .success(let url):
@@ -298,7 +319,7 @@ public final class BuildCoordinator: ObservableObject {
         setProgress(.formatting, 1.0, loc("build.detail.formatted"))
         try checkpoint()
 
-        // ---- Fase 2: Copiar (todo menos install.wim) ----
+        // ---- Phase 2: Copy (everything except install.wim) ----
         copyMeter.reset()
         setProgress(.copying, 0, loc("build.detail.copyingISO"))
         try copier.copy(from: mounted.mountPoint, to: usbVolume,
@@ -312,14 +333,14 @@ public final class BuildCoordinator: ObservableObject {
                         isCancelled: cancelled)
         try checkpoint()
 
-        // ---- Fase 3: install.wim (dividir si > 4 GiB, si no copiar entero) ----
+        // ---- Phase 3: install.wim (split if > 4 GiB, otherwise copy whole) ----
         let sourcesDir = usbVolume.appendingPathComponent("sources")
         try FileManager.default.createDirectory(at: sourcesDir, withIntermediateDirectories: true)
         let wimURL = mounted.mountPoint.appendingPathComponent("sources/install.wim")
 
         if info.requiresWIMSplit {
             splitMeter.reset()
-            // Tamaño del WIM para traducir la fracción de wimlib a bytes reales.
+            // WIM size to translate wimlib's fraction into real bytes.
             let wimSize = (try? FileManager.default.attributesOfItem(atPath: wimURL.path)[.size] as? NSNumber)??.uint64Value ?? 0
             setProgress(.splitting, 0, loc("build.detail.splitting"),
                         bytesDone: 0, bytesTotal: wimSize, bytesPerSecond: nil)
@@ -341,7 +362,7 @@ public final class BuildCoordinator: ObservableObject {
         }
         try checkpoint()
 
-        // ---- Fase 4: Finalizar (desmontar ISO + expulsar USB) ----
+        // ---- Phase 4: Finalize (detach ISO + eject USB) ----
         setProgress(.finalizing, 0.3, loc("build.detail.unmountingISO"))
         detachISOIfNeeded()
         setProgress(.finalizing, 0.7, loc("build.detail.ejecting"))
@@ -349,11 +370,17 @@ public final class BuildCoordinator: ObservableObject {
         setProgress(.finalizing, 1.0, loc("build.detail.finalized"))
     }
 
-    /// Flujo raw (Linux/isohíbrido): escribir el ISO CRUDO al disco con el helper
-    /// root (no formatear/etiqueta/split). El helper desmonta, escribe `/dev/rdiskN`
-    /// y expulsa; aquí solo orquestamos y reportamos el progreso por callback.
+    /// Raw flow (Linux/isohybrid): write the RAW ISO to the disk with the root
+    /// helper (no format/label/split). The helper unmounts, writes `/dev/rdiskN`
+    /// and ejects; here we only orchestrate and report progress via callback.
     private func runRawBuild(disk: Disk, info: ISOInfo) throws {
-        // S-3: revalidación JIT justo antes de la operación destructiva.
+        // A2: `dd` writes the whole ISO; if the USB can't fit the image the write
+        // fails halfway and leaves the USB broken. Guard BEFORE touching the disk.
+        guard disk.fitsRawImage(ofBytes: info.sizeBytes) else {
+            throw BuildError.usbTooSmallForImage(needBytes: info.sizeBytes, haveBytes: disk.sizeBytes)
+        }
+
+        // S-3: JIT revalidation just before the destructive operation.
         setProgress(.writingImage, 0, loc("build.detail.revalidating"))
         guard DiskRevalidation.isStillValid(selected: disk, in: diskService.snapshot()) else {
             throw BuildError.diskChanged
@@ -368,10 +395,10 @@ public final class BuildCoordinator: ObservableObject {
         setProgress(.writingImage, 0, loc("build.detail.writingImage"),
                     bytesDone: 0, bytesTotal: info.sizeBytes, bytesPerSecond: nil)
 
-        // El helper escribe el ARCHIVO .iso (info.url), no el montaje. Puente
-        // async→sync: lanzamos la escritura y esperamos su resolución. NOTA: el `dd`
-        // del helper no es interrumpible, así que durante esta fase la cancelación
-        // no aborta a mitad (el USB quedaría reformateable). La UI deshabilita Cancelar.
+        // The helper writes the .iso FILE (info.url), not the mount. async→sync
+        // bridge: we launch the write and wait for its resolution. NOTE: the helper's
+        // `dd` is not interruptible, so during this phase cancellation does not
+        // abort midway (the USB would be left reformattable). The UI disables Cancel.
         let lock = NSLock()
         var done = false
         var writeError: Error?
@@ -394,19 +421,19 @@ public final class BuildCoordinator: ObservableObject {
             usleep(200_000)
         }
 
-        // El helper ya expulsó el disco; solo queda soltar el ISO.
+        // The helper already ejected the disk; only the ISO is left to release.
         setProgress(.finalizing, 0.6, loc("build.detail.unmountingISO"))
         detachISOIfNeeded()
         setProgress(.finalizing, 1.0, loc("build.detail.finalized"))
     }
 
-    /// Pide el formateo por XPC y devuelve el volumen formateado EN CUANTO aparece
-    /// montado, sin colgarse esperando el reply (que el helper puede perder al salir).
-    /// Termina por la primera condición que ocurra:
-    ///   - el volumen `/Volumes/<label>` aparece → éxito (verificación por efecto),
-    ///   - el reply llega con error → fallo,
-    ///   - cancelación → CancellationSignal,
-    ///   - se agota `timeout` → último intento de ver el volumen, o `.eraseTimedOut`.
+    /// Requests the format over XPC and returns the formatted volume AS SOON AS it
+    /// appears mounted, without hanging waiting for the reply (which the helper may
+    /// lose on exit). Ends on the first condition that occurs:
+    ///   - the volume `/Volumes/<label>` appears → success (verification-by-effect),
+    ///   - the reply arrives with an error → failure,
+    ///   - cancellation → CancellationSignal,
+    ///   - `timeout` elapses → one last attempt to see the volume, or `.eraseTimedOut`.
     private func formatAndAwaitVolume(bsdName: String, label: String,
                                       timeout: TimeInterval) -> Result<URL, Error> {
         let lock = NSLock()
@@ -420,17 +447,17 @@ public final class BuildCoordinator: ObservableObject {
         }
 
         let volumeURL = URL(fileURLWithPath: "/Volumes/\(label)")
-        // eraseDisk MS-DOS GPT crea EFI (s1) + FAT32 de datos (s2). El daemon root
-        // NO auto-monta el volumen, así que lo detectamos por efecto en la partición
-        // y lo montamos nosotros.
+        // eraseDisk MS-DOS GPT creates EFI (s1) + data FAT32 (s2). The root daemon
+        // does NOT auto-mount the volume, so we detect it by effect on the partition
+        // and mount it ourselves.
         let dataPartition = "\(bsdName)s2"
         let deadline = Date(timeIntervalSinceNow: timeout)
         while Date() < deadline {
             if cancelToken.isCancelled { return .failure(CancellationSignal()) }
             if FileManager.default.fileExists(atPath: volumeURL.path) {
-                return .success(volumeURL)          // formateo confirmado por efecto
+                return .success(volumeURL)          // format confirmed by effect
             }
-            // ¿La partición de datos ya es FAT32 con nuestra etiqueta? → montarla.
+            // Is the data partition already FAT32 with our label? → mount it.
             if Self.isFormatted(partition: dataPartition, label: label) {
                 _ = Subprocess.run("/usr/sbin/diskutil", ["mount", dataPartition])
                 if FileManager.default.fileExists(atPath: volumeURL.path) {
@@ -438,29 +465,29 @@ public final class BuildCoordinator: ObservableObject {
                 }
             }
             lock.lock(); let done = replyDone; let err = replyError; lock.unlock()
-            if done, let err { return .failure(err) } // el helper reportó un fallo real
+            if done, let err { return .failure(err) } // the helper reported a real failure
             usleep(500_000)
         }
         if FileManager.default.fileExists(atPath: volumeURL.path) { return .success(volumeURL) }
         return .failure(replyError ?? BuildError.eraseTimedOut)
     }
 
-    /// `true` si la partición ya es FAT32 con la etiqueta esperada (verificación por
-    /// efecto del formateo, independiente del reply XPC y del auto-montaje).
+    /// `true` if the partition is already FAT32 with the expected label (verification
+    /// by effect of the format, independent of the XPC reply and auto-mounting).
     private static func isFormatted(partition: String, label: String) -> Bool {
         let r = Subprocess.run("/usr/sbin/diskutil", ["info", "-plist", "/dev/\(partition)"])
         guard r.succeeded,
               let plist = (try? PropertyListSerialization.propertyList(from: r.stdout, options: [], format: nil)) as? [String: Any]
         else { return false }
-        // diskutil reporta FilesystemType="msdos" (no contiene "fat"), por eso
-        // aceptamos msdos/fat; el match de la etiqueta es la señal fuerte.
+        // diskutil reports FilesystemType="msdos" (doesn't contain "fat"), which is
+        // why we accept msdos/fat; the label match is the strong signal.
         let volumeName = plist["VolumeName"] as? String
         let fsType = ((plist["FilesystemType"] as? String)
             ?? (plist["FilesystemName"] as? String) ?? "").lowercased()
         return volumeName == label && (fsType.contains("fat") || fsType.contains("msdos"))
     }
 
-    /// Espera a que el volumen recién formateado se monte en /Volumes/<label>.
+    /// Waits for the freshly formatted volume to mount at /Volumes/<label>.
     private func waitForVolume(label: String, timeout: TimeInterval) -> URL? {
         let path = "/Volumes/\(label)"
         let deadline = Date(timeIntervalSinceNow: timeout)
@@ -474,7 +501,7 @@ public final class BuildCoordinator: ObservableObject {
         return FileManager.default.fileExists(atPath: path) ? URL(fileURLWithPath: path) : nil
     }
 
-    // MARK: - Limpieza / utilidades
+    // MARK: - Cleanup / utilities
 
     private func detachISOIfNeeded() {
         if let m = mountedISO {
@@ -483,7 +510,7 @@ public final class BuildCoordinator: ObservableObject {
         }
     }
 
-    /// S-5: ante fallo o cancelación, dejar todo limpio (ISO desmontado).
+    /// S-5: on failure or cancellation, leave everything clean (ISO detached).
     private func cleanupAfterExit() {
         detachISOIfNeeded()
     }
@@ -506,22 +533,25 @@ public final class BuildCoordinator: ObservableObject {
         if Thread.isMainThread { block() } else { DispatchQueue.main.async(execute: block) }
     }
 
-    /// Ejecuta trabajo bloqueante en un hilo dedicado (no en el pool cooperativo
-    /// ni en main). Seguro para combinar con el puente sync→async del XPC.
+    /// Runs blocking work on a dedicated thread (not on the cooperative pool
+    /// nor on main). Safe to combine with the XPC sync→async bridge.
     private func background(_ body: @escaping () -> Void) {
         Thread.detachNewThread(body)
     }
 }
 
-/// Señal interna de cancelación (no es un error de usuario).
+/// Internal cancellation signal (not a user error).
 private struct CancellationSignal: Error {}
 
-/// Errores de orquestación.
+/// Orchestration errors.
 enum BuildError: LocalizedError {
     case diskChanged
     case usbVolumeNotFound
     case eraseTimedOut
     case unsupportedISO
+    /// The USB is smaller than the ISO to be written raw (A2). Carries both sizes so
+    /// the user can see how much is needed vs. how much they have.
+    case usbTooSmallForImage(needBytes: UInt64, haveBytes: UInt64)
 
     var errorDescription: String? {
         switch self {
@@ -533,21 +563,25 @@ enum BuildError: LocalizedError {
             return loc("error.build.eraseTimedOut")
         case .unsupportedISO:
             return loc("error.build.unsupportedISO")
+        case let .usbTooSmallForImage(needBytes, haveBytes):
+            let need = ByteCountFormatter.string(fromByteCount: Int64(needBytes), countStyle: .file)
+            let have = ByteCountFormatter.string(fromByteCount: Int64(haveBytes), countStyle: .file)
+            return loc("error.build.usbTooSmall \(have) \(need)")
         }
     }
 }
 
-/// Política de "verificación por efecto" del formateo: el formateo se da por bueno
-/// si hubo reply limpio del helper, O si el volumen recién formateado apareció
-/// montado (aunque el reply XPC se haya perdido). Evita colgar la app por un reply
-/// perdido cuando el formateo sí ocurrió.
+/// "Verification by effect" policy for the format: the format is considered good
+/// if there was a clean reply from the helper, OR if the freshly formatted volume
+/// appeared mounted (even if the XPC reply was lost). Avoids hanging the app over a
+/// lost reply when the format did happen.
 enum EraseDecision {
     static func succeeded(replyFailed: Bool, volumeAppeared: Bool) -> Bool {
         !replyFailed || volumeAppeared
     }
 }
 
-/// Bandera de cancelación segura entre hilos.
+/// Thread-safe cancellation flag.
 final class CancellationToken {
     private let lock = NSLock()
     private var cancelled = false

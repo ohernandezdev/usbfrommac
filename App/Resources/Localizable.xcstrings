@@ -205,6 +205,12 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "El formateo tardó demasiado en responder." } }
       }
     },
+    "error.build.usbTooSmall %@ %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This USB (%1$@) is smaller than the ISO (%2$@). Use a USB of %2$@ or more." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Este USB (%1$@) es más pequeño que el ISO (%2$@). Usa un USB de %2$@ o más." } }
+      }
+    },
     "error.build.usbVolumeNotFound" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "The USB volume wasn't found after formatting. Reconnect it and try again." } },
