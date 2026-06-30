@@ -321,8 +321,8 @@
     },
     "iso.drop.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Drag your Windows ISO here" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Arrastra tu ISO de Windows aquí" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Drag your ISO here" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Arrastra tu ISO aquí" } }
       }
     },
     "iso.drop.subtitle" : {
@@ -453,8 +453,8 @@
     },
     "iso.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select the Windows 11 ISO" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Selecciona el ISO de Windows 11" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select your ISO" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Selecciona tu ISO" } }
       }
     },
     "iso.wim.fits %@" : {
@@ -591,8 +591,8 @@
     },
     "step.iso" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Windows ISO" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "ISO de Windows" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "ISO" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "ISO" } }
       }
     },
     "step.usb" : {
