@@ -20,6 +20,9 @@ struct DiskListView: View {
                     VStack(spacing: Carbon.Space.sm) {
                         ForEach(coordinator.diskService.disks) { disk in
                             DiskRow(disk: disk,
+                                    verdict: disk.sizeVerdict(imageBytes: coordinator.isoInfo?.sizeBytes ?? 0,
+                                                              isRawFlow: coordinator.isRawFlow),
+                                    isRawFlow: coordinator.isRawFlow,
                                     selected: coordinator.selectedDisk?.id == disk.id) {
                                 coordinator.selectedDisk = disk
                             }
@@ -61,6 +64,8 @@ struct DiskListView: View {
 
 private struct DiskRow: View {
     let disk: Disk
+    let verdict: Disk.SizeVerdict
+    let isRawFlow: Bool
     let selected: Bool
     let onTap: () -> Void
 
@@ -120,13 +125,19 @@ private struct DiskRow: View {
         return Carbon.hairline
     }
 
+    // The size criterion depends on the flow: Windows uses fixed 8/16 GB thresholds;
+    // the raw (Linux) flow only cares that the USB fits the ISO (B4).
     @ViewBuilder private var sizeWarning: some View {
-        if disk.isTooSmall {
-            Label("disk.tooSmall", systemImage: "exclamationmark.triangle.fill")
+        switch verdict {
+        case .tooSmall:
+            Label(isRawFlow ? "disk.tooSmallForISO" : "disk.tooSmall",
+                  systemImage: "exclamationmark.triangle.fill")
                 .carbon(.caption).foregroundStyle(Carbon.error)
-        } else if !disk.meetsRecommendedSize {
+        case .recommend:
             Label("disk.recommendSize", systemImage: "exclamationmark.triangle")
                 .carbon(.caption).foregroundStyle(Carbon.warning)
+        case .ok:
+            EmptyView()
         }
     }
 }

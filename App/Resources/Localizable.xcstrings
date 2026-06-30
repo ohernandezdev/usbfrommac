@@ -175,6 +175,12 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Menos de 8 GB: demasiado pequeño para Windows 11." } }
       }
     },
+    "disk.tooSmallForISO" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Too small: smaller than the ISO." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Demasiado pequeño: menor que el ISO." } }
+      }
+    },
     "duration.minutes %lld" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld min" } },

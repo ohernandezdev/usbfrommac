@@ -67,4 +67,25 @@ public struct Disk: Identifiable, Equatable, Hashable {
     public func fitsRawImage(ofBytes imageBytes: UInt64) -> Bool {
         sizeBytes >= imageBytes
     }
+
+    /// Size verdict for the build flow, driving the warning shown in the disk list (B4).
+    public enum SizeVerdict: Equatable {
+        case ok          // large enough
+        case recommend   // works, but below the recommended size (Windows only)
+        case tooSmall    // unusable / blocking
+    }
+
+    /// Flow-dependent size verdict:
+    /// - Windows (FAT32 copy): fixed thresholds — 8 GB (hard) / 16 GB (recommended);
+    ///   the ISO size is irrelevant because files are copied, not imaged.
+    /// - Linux/raw (`dd`): the only criterion is USB >= ISO size; there is no
+    ///   "recommended" middle ground — it either fits the image or it doesn't (A2).
+    public func sizeVerdict(imageBytes: UInt64, isRawFlow: Bool) -> SizeVerdict {
+        if isRawFlow {
+            return fitsRawImage(ofBytes: imageBytes) ? .ok : .tooSmall
+        }
+        if isTooSmall { return .tooSmall }
+        if !meetsRecommendedSize { return .recommend }
+        return .ok
+    }
 }
