@@ -1,37 +1,37 @@
 #!/usr/bin/env bash
 #
-# build-notarize.sh — build de Release firmado + notarizado para distribución
-# FUERA del Mac App Store (la app no puede ir en sandbox: necesita disco crudo).
+# build-notarize.sh — signed + notarized Release build for distribution
+# OUTSIDE the Mac App Store (the app can't be sandboxed: it needs the raw disk).
 #
-# Uso:
-#   scripts/build-notarize.sh "Developer ID Application: NOMBRE (TEAMID)" TEAMID NOTARY_PROFILE
+# Usage:
+#   scripts/build-notarize.sh "Developer ID Application: NAME (TEAMID)" TEAMID NOTARY_PROFILE
 #
-#   NOTARY_PROFILE se crea una vez con:
+#   NOTARY_PROFILE is created once with:
 #     xcrun notarytool store-credentials NOTARY_PROFILE \
-#       --apple-id TU_APPLE_ID --team-id TEAMID --password APP_SPECIFIC_PASSWORD
+#       --apple-id YOUR_APPLE_ID --team-id TEAMID --password APP_SPECIFIC_PASSWORD
 #
-# Pasos manuales previos (una vez):
-#   1. Tener el certificado "Developer ID Application" en el llavero.
-#   2. Poner tu Team ID en Shared/HelperProtocol.swift (HelperConstants.teamID),
-#      para que la validación de firma XPC app↔helper funcione.
-#   3. brew install wimlib  (para empaquetar el binario).
+# Manual prerequisites (one time):
+#   1. Have the "Developer ID Application" certificate in the keychain.
+#   2. Set your Team ID in Shared/HelperProtocol.swift (HelperConstants.teamID),
+#      so the app↔helper XPC signature validation works.
+#   3. brew install wimlib  (to package the binary).
 #
 set -euo pipefail
 
-IDENTITY="${1:?Falta la identidad Developer ID Application}"
-TEAM="${2:?Falta el Team ID}"
-PROFILE="${3:?Falta el perfil de notarytool}"
+IDENTITY="${1:?Missing Developer ID Application identity}"
+TEAM="${2:?Missing Team ID}"
+PROFILE="${3:?Missing notarytool profile}"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-echo "▸ 1/6 Empaquetando wimlib firmado…"
+echo "▸ 1/6 Packaging signed wimlib…"
 scripts/package-wimlib.sh /opt/homebrew "$IDENTITY"
 
-echo "▸ 2/6 Generando proyecto…"
+echo "▸ 2/6 Generating project…"
 xcodegen generate
 
-echo "▸ 3/6 Compilando Release (hardened runtime)…"
+echo "▸ 3/6 Building Release (hardened runtime)…"
 rm -rf build/dd
 xcodebuild -project UsbFromMac.xcodeproj -scheme UsbFromMac -configuration Release \
   -derivedDataPath build/dd \
@@ -43,14 +43,14 @@ xcodebuild -project UsbFromMac.xcodeproj -scheme UsbFromMac -configuration Relea
 
 APP="build/dd/Build/Products/Release/UsbFromMac.app"
 
-echo "▸ 4/6 Re-firmando helper embebido y app…"
+echo "▸ 4/6 Re-signing embedded helper and app…"
 codesign --force --options runtime --timestamp \
   --entitlements Helper/Helper.entitlements --sign "$IDENTITY" \
   "$APP/Contents/MacOS/UsbFromMacHelper"
 codesign --force --options runtime --timestamp \
   --entitlements App/App.entitlements --sign "$IDENTITY" "$APP"
 
-echo "▸ 5/6 Notarizando…"
+echo "▸ 5/6 Notarizing…"
 mkdir -p build
 ZIP="build/UsbFromMac.zip"
 ditto -c -k --keepParent "$APP" "$ZIP"
@@ -59,5 +59,5 @@ xcrun notarytool submit "$ZIP" --keychain-profile "$PROFILE" --wait
 echo "▸ 6/6 Stapling…"
 xcrun stapler staple "$APP"
 
-echo "✓ Listo: $APP notarizado y stapleado."
-echo "  Verifica:  spctl -a -vvv \"$APP\""
+echo "✓ Done: $APP notarized and stapled."
+echo "  Verify:  spctl -a -vvv \"$APP\""

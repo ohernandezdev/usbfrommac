@@ -2,13 +2,13 @@ import Foundation
 import DiskArbitration
 import IOKit
 
-/// Fuente de discos de producción: enumera discos físicos COMPLETOS con IOKit y
-/// los describe con DiskArbitration, y observa conexión/desconexión en vivo
-/// (RF-1: refrescar en vivo).
+/// Production disk source: enumerates WHOLE physical disks with IOKit and
+/// describes them with DiskArbitration, and observes connection/disconnection
+/// live (RF-1: live refresh).
 ///
-/// No decide elegibilidad: enumera TODO (incluidos internos) y deja que el
-/// `DiskFilter` aplique la lista blanca. Así el filtro es el único punto de
-/// decisión y queda completamente cubierto por tests.
+/// It does not decide eligibility: it enumerates EVERYTHING (internal disks
+/// included) and lets `DiskFilter` apply the whitelist. This way the filter is
+/// the single decision point and is fully covered by tests.
 public final class DiskArbitrationSource: DiskEnumerating {
 
     public var onChange: (([DiskCandidate]) -> Void)?
@@ -40,7 +40,7 @@ public final class DiskArbitrationSource: DiskEnumerating {
                 Unmanaged<DiskArbitrationSource>.fromOpaque(ctx).takeUnretainedValue().handleChange()
             }, context)
         }
-        // Entrega inmediata del estado actual.
+        // Immediate delivery of the current state.
         handleChange()
     }
 
@@ -54,13 +54,13 @@ public final class DiskArbitrationSource: DiskEnumerating {
     }
 
     public func currentCandidates() -> [DiskCandidate] {
-        // Sirve aunque no se haya llamado a start(): usa una sesión temporal.
+        // Works even if start() was never called: uses a temporary session.
         let sess = session ?? DASessionCreate(kCFAllocatorDefault)
         guard let sess else { return [] }
         return Self.enumerateWholeDisks(session: sess)
     }
 
-    // MARK: - Privado
+    // MARK: - Private
 
     private func handleChange() {
         let candidates = currentCandidates()
@@ -68,10 +68,10 @@ public final class DiskArbitrationSource: DiskEnumerating {
         DispatchQueue.main.async { callback?(candidates) }
     }
 
-    /// Enumera todos los discos físicos completos (IOMedia con Whole=true) y los
-    /// convierte a `DiskCandidate` usando la descripción de DiskArbitration.
+    /// Enumerates all whole physical disks (IOMedia with Whole=true) and converts
+    /// them to `DiskCandidate` using the DiskArbitration description.
     private static func enumerateWholeDisks(session: DASession) -> [DiskCandidate] {
-        // Constantes de IOMedia.h (macros de C que Swift no expone como símbolos).
+        // Constants from IOMedia.h (C macros that Swift does not expose as symbols).
         guard let matchingCF = IOServiceMatching("IOMedia") else { return [] }
         let matching = matchingCF as NSMutableDictionary
         matching["Whole"] = kCFBooleanTrue

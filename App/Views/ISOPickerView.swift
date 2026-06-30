@@ -2,7 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 import AppKit
 
-/// Paso 1: seleccionar el ISO de Windows 11 y (opcional) verificar su SHA-256.
+/// Step 1: select the Windows 11 ISO and (optionally) verify its SHA-256.
 struct ISOPickerView: View {
     @ObservedObject var coordinator: BuildCoordinator
     @State private var showImporter = false
@@ -42,7 +42,7 @@ struct ISOPickerView: View {
         }
     }
 
-    // MARK: Drop zone (arrastra o haz clic)
+    // MARK: Drop zone (drag or click)
 
     private var dropZone: some View {
         Button { showImporter = true } label: {
@@ -91,7 +91,7 @@ struct ISOPickerView: View {
         }
     }
 
-    // MARK: Barra del archivo seleccionado
+    // MARK: Selected file bar
 
     private var selectedFileBar: some View {
         HStack(spacing: Carbon.Space.sm) {
@@ -125,7 +125,7 @@ struct ISOPickerView: View {
     @ViewBuilder
     private func isoSummary(_ info: ISOInfo) -> some View {
         VStack(alignment: .leading, spacing: Carbon.Space.sm) {
-            // Tipo de arranque detectado → determina la estrategia (copia vs. raw).
+            // Detected boot type → determines the strategy (copy vs. raw).
             switch info.bootType {
             case .windows:
                 statusRow("checkmark.seal.fill", "iso.type.windows", Carbon.success)
@@ -135,7 +135,7 @@ struct ISOPickerView: View {
                 statusRow("xmark.octagon.fill", "iso.type.unsupported", Carbon.error)
             }
 
-            // El detalle de install.wim y Secure Boot solo aplica al flujo Windows.
+            // The install.wim and Secure Boot detail only applies to the Windows flow.
             if info.bootType == .windows {
                 if let wim = info.installWIMSizeBytes {
                     let txt = ByteCountFormatter.string(fromByteCount: Int64(wim), countStyle: .file)
@@ -184,7 +184,7 @@ struct ISOPickerView: View {
             CarbonTextField(placeholder: "hash.placeholder",
                             text: $coordinator.expectedHash, monospaced: true)
 
-            // Estado automático: se calcula y compara solo al detectar un hash completo.
+            // Automatic status: computed and compared only once a complete hash is detected.
             if coordinator.isHashing {
                 HStack(spacing: Carbon.Space.xs) {
                     ProgressView(value: coordinator.hashProgress).tint(Carbon.primary)
@@ -200,7 +200,7 @@ struct ISOPickerView: View {
         }
         .carbonCard()
         .onChange(of: coordinator.expectedHash) { value in
-            // Verificación automática en cuanto el texto es un SHA-256 válido (64 hex).
+            // Automatic verification as soon as the text is a valid SHA-256 (64 hex).
             let n = ISOService.normalizedHash(value)
             if n.count == 64, n.allSatisfy(\.isHexDigit), !coordinator.isHashing {
                 coordinator.verifyHash()
@@ -212,7 +212,7 @@ struct ISOPickerView: View {
         statusRow(icon, Text(text), color)
     }
 
-    /// Variante para texto ya resuelto en tiempo de ejecución (errores, tamaños).
+    /// Variant for text already resolved at runtime (errors, sizes).
     private func statusRow(_ icon: String, verbatim text: String, _ color: Color) -> some View {
         statusRow(icon, Text(verbatim: text), color)
     }

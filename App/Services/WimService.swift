@@ -1,21 +1,21 @@
 import Foundation
 
 public enum WimConstants {
-    /// Tamaño objetivo de cada fragmento, en MiB. Es un OBJETIVO, no un tope:
-    /// un recurso no se parte entre fragmentos, por eso 3800 (no 4096) para dejar
-    /// margen bajo el techo de 4 GiB de FAT32 (verificado: wimlib LIMITATIONS).
+    /// Target size of each part, in MiB. It's a TARGET, not a hard cap:
+    /// a resource isn't split across parts, hence 3800 (not 4096) to leave
+    /// headroom under FAT32's 4 GiB ceiling (verified: wimlib LIMITATIONS).
     public static let partSizeMiB = 3800
 
-    /// El primer fragmento DEBE llamarse install.swm; wimlib genera install2.swm,
-    /// install3.swm… automáticamente. Windows Setup los reensambla solo en sources/.
+    /// The first part MUST be named install.swm; wimlib generates install2.swm,
+    /// install3.swm… automatically. Windows Setup reassembles them on its own in sources/.
     public static let firstSWMName = "install.swm"
 
-    /// Nombre del binario empaquetado.
+    /// Name of the bundled binary.
     public static let binaryName = "wimlib-imagex"
 }
 
-/// Abstracción del divisor de WIM: permite cambiar la implementación (binario
-/// como subproceso ↔ libwim enlazado) sin tocar el resto de la app.
+/// Abstraction over the WIM splitter: lets you swap the implementation (binary
+/// as a subprocess ↔ linked libwim) without touching the rest of the app.
 public protocol WimSplitting {
     func split(wim: URL,
                intoSourcesDir: URL,
@@ -24,11 +24,11 @@ public protocol WimSplitting {
                isCancelled: () -> Bool) throws
 }
 
-/// Divide `sources/install.wim` en `.swm` con `wimlib-imagex` (RF-8).
+/// Splits `sources/install.wim` into `.swm` parts with `wimlib-imagex` (RF-8).
 ///
-/// El binario se ejecuta como subproceso (la app es open source / GPLv3, así que
-/// no hay conflicto de licencia). NO hay fallback a un wimlib del sistema: si el
-/// binario no está empaquetado, falla con un error claro (config manual de Fase 8).
+/// The binary runs as a subprocess (the app is open source / GPLv3, so there's
+/// no license conflict). There's NO fallback to a system wimlib: if the binary
+/// isn't bundled, it fails with a clear error (Phase 8 manual config).
 public final class WimService: WimSplitting {
 
     public enum WimError: LocalizedError, Equatable {
@@ -50,9 +50,9 @@ public final class WimService: WimSplitting {
 
     private let binaryURL: URL?
 
-    /// Por defecto usa el binario empaquetado. En desarrollo/tests se puede inyectar
-    /// una ruta explícita (p. ej. el de Homebrew). Esto es configuración explícita,
-    /// no un fallback silencioso.
+    /// Defaults to the bundled binary. In development/tests an explicit path can be
+    /// injected (e.g. the Homebrew one). This is explicit configuration,
+    /// not a silent fallback.
     public init(binaryURL: URL? = WimService.bundledBinaryURL()) {
         self.binaryURL = binaryURL
     }
@@ -88,8 +88,8 @@ public final class WimService: WimSplitting {
             throw WimError.splitFailed(error.localizedDescription)
         }
 
-        // Progreso robusto: medir lo escrito en los .swm vs el tamaño del wim.
-        // No depende del formato de salida de wimlib (que puede cambiar).
+        // Robust progress: measure what's written to the .swm files vs the wim size.
+        // Doesn't depend on wimlib's output format (which may change).
         while process.isRunning {
             if isCancelled() {
                 process.terminate()
@@ -113,27 +113,27 @@ public final class WimService: WimSplitting {
         progress(1.0)
     }
 
-    // MARK: - Lógica pura (testeable sin binario)
+    // MARK: - Pure logic (testable without the binary)
 
-    /// Construye el comando: `wimlib-imagex split <wim> <install.swm> <partSize>`.
+    /// Builds the command: `wimlib-imagex split <wim> <install.swm> <partSize>`.
     public static func splitCommand(binary: URL, wim: URL, firstSWM: URL, partSizeMiB: Int) -> (launch: String, args: [String]) {
         (binary.path, ["split", wim.path, firstSWM.path, String(partSizeMiB)])
     }
 
-    /// Nombre del fragmento n.º `index` (1 → install.swm, 2 → install2.swm…).
+    /// Name of part number `index` (1 → install.swm, 2 → install2.swm…).
     public static func expectedSWMName(index: Int) -> String {
         index <= 1 ? "install.swm" : "install\(index).swm"
     }
 
-    /// Estimación (cota inferior) del número de fragmentos: ceil(tamaño / parte).
-    /// El real puede ser igual o uno más (un recurso no se parte entre fragmentos).
+    /// Estimate (lower bound) of the number of parts: ceil(size / part).
+    /// The actual count may be equal or one more (a resource isn't split across parts).
     public static func minimumPartCount(wimSizeBytes: UInt64, partSizeMiB: Int) -> Int {
         guard wimSizeBytes > 0, partSizeMiB > 0 else { return 0 }
         let partBytes = UInt64(partSizeMiB) * 1024 * 1024
         return Int((wimSizeBytes + partBytes - 1) / partBytes)
     }
 
-    // MARK: - Privado
+    // MARK: - Private
 
     private static func writtenSWMBytes(in dir: URL) -> UInt64 {
         guard let items = try? FileManager.default.contentsOfDirectory(

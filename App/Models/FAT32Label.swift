@@ -1,28 +1,28 @@
 import Foundation
 
-/// Validación y saneado de etiquetas FAT32 para la UI.
+/// Validation and sanitization of FAT32 labels for the UI.
 ///
-/// La etiqueta FAT32 admite como máximo 11 caracteres. El helper root tiene su
-/// PROPIA validación equivalente (no confía en esta); aquí solo se valida de cara
-/// al usuario antes de enviar la operación.
+/// A FAT32 label allows at most 11 characters. The root helper has its OWN
+/// equivalent validation (it doesn't trust this one); here we only validate for
+/// the user before dispatching the operation.
 public enum FAT32Label {
 
     public static let maxLength = 11
 
-    /// Charset conservador y seguro para una etiqueta FAT32.
+    /// Conservative, safe character set for a FAT32 label.
     private static let allowed = CharacterSet(charactersIn:
         "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-")
 
-    /// Comprueba si una etiqueta es válida tal cual (ya en mayúsculas y saneada).
+    /// Checks whether a label is valid as-is (already uppercased and sanitized).
     public static func isValid(_ label: String) -> Bool {
         !label.isEmpty
             && label.count <= maxLength
             && label.unicodeScalars.allSatisfy { allowed.contains($0) }
     }
 
-    /// Convierte cualquier texto del usuario en una etiqueta FAT32 válida:
-    /// mayúsculas, solo caracteres permitidos, truncada a 11. Si queda vacía,
-    /// usa el `fallback`.
+    /// Turns any user text into a valid FAT32 label: uppercased, allowed
+    /// characters only, truncated to 11. If it ends up empty, uses the
+    /// `fallback`.
     public static func sanitize(_ raw: String, fallback: String = "WIN11") -> String {
         let filtered = String(raw.uppercased().unicodeScalars.filter { allowed.contains($0) })
         let trimmed = String(filtered.prefix(maxLength))

@@ -1,11 +1,11 @@
 import Foundation
 
-/// Medidor de velocidad de transferencia (bytes/seg) con suavizado exponencial.
+/// Transfer speed meter (bytes/sec) with exponential smoothing.
 ///
-/// Recibe el total ACUMULADO de bytes en cada muestra (no el delta) junto con su
-/// instante; devuelve una tasa suavizada (EWMA) para que el número no salte con
-/// cada chunk. Es puro respecto al reloj: el instante se inyecta, así es testeable
-/// sin depender de `Date()` real.
+/// It receives the CUMULATIVE total of bytes on each sample (not the delta) along
+/// with its timestamp; it returns a smoothed rate (EWMA) so the number doesn't jump
+/// with every chunk. It's pure with respect to the clock: the timestamp is injected,
+/// so it's testable without depending on the real `Date()`.
 public final class RateMeter {
     private let alpha: Double
     private var lastBytes: UInt64?
@@ -16,14 +16,14 @@ public final class RateMeter {
         self.alpha = alpha
     }
 
-    /// Registra una muestra (bytes acumulados, instante) y devuelve la velocidad
-    /// suavizada en bytes/seg, o `nil` si aún no hay suficiente historia.
+    /// Records a sample (cumulative bytes, timestamp) and returns the smoothed
+    /// speed in bytes/sec, or `nil` if there isn't enough history yet.
     @discardableResult
     public func sample(bytes: UInt64, at time: Date) -> Double? {
         defer { lastBytes = bytes; lastTime = time }
         guard let lb = lastBytes, let lt = lastTime else { return nil }
         let dt = time.timeIntervalSince(lt)
-        // Sin tiempo transcurrido o retroceso de bytes: conserva la última tasa.
+        // No elapsed time or bytes went backwards: keep the last rate.
         guard dt > 0, bytes >= lb else { return ewma }
         let instant = Double(bytes - lb) / dt
         ewma = ewma.map { $0 * (1 - alpha) + instant * alpha } ?? instant

@@ -1,16 +1,16 @@
 import Foundation
 
-/// POC de la escritura "cruda" (raw / `dd`) de un ISO isohíbrido al disco.
+/// POC for the "raw" write (raw / `dd`) of an isohybrid ISO to the disk.
 ///
-/// Mecánica: lee el ISO por bloques y los escribe secuencialmente al destino,
-/// reportando bytes para progreso real y permitiendo cancelar limpio (S-5).
-/// Es el MISMO patrón que `CopyService` pero a un único destino contiguo.
+/// Mechanics: reads the ISO in blocks and writes them sequentially to the destination,
+/// reporting bytes for real progress and allowing a clean cancel (S-5).
+/// It's the SAME pattern as `CopyService` but to a single contiguous destination.
 ///
-/// ⚠️ AISLADO A PROPÓSITO (POC): aún NO se invoca desde el wizard. En producción
-/// `destination` sería `/dev/rdiskN` abierto por el **helper root** (la app de
-/// usuario no puede escribir un block device), tras `diskutil unmountDisk`. Aquí
-/// el destino es una URL cualquiera (en tests, un archivo temporal) para validar
-/// la mecánica y el progreso sin riesgo. NO hay fallback: si algo falla, lanza.
+/// ⚠️ DELIBERATELY ISOLATED (POC): it is NOT yet invoked from the wizard. In production
+/// `destination` would be `/dev/rdiskN` opened by the **root helper** (the user app
+/// can't write to a block device), after `diskutil unmountDisk`. Here the
+/// destination is any URL (in tests, a temporary file) to validate the mechanics and
+/// progress without risk. There's NO fallback: if something fails, it throws.
 public final class RawImageWriter {
 
     public struct Progress: Equatable {
@@ -30,25 +30,25 @@ public final class RawImageWriter {
 
         public var errorDescription: String? {
             switch self {
-            case .openSourceFailed(let m):      return "No se pudo abrir la imagen: \(m)"
-            case .openDestinationFailed(let m):  return "No se pudo abrir el destino: \(m)"
-            case .readFailed(let m):             return "Error de lectura: \(m)"
-            case .writeFailed(let m):            return "Error de escritura: \(m)"
-            case .cancelled:                     return "Escritura cancelada."
+            case .openSourceFailed(let m):      return "Couldn't open the image: \(m)"
+            case .openDestinationFailed(let m):  return "Couldn't open the destination: \(m)"
+            case .readFailed(let m):             return "Read error: \(m)"
+            case .writeFailed(let m):            return "Write error: \(m)"
+            case .cancelled:                     return "Write cancelled."
             }
         }
     }
 
-    /// Bloque de 4 MiB: equilibra rendimiento y granularidad de progreso/cancelación.
+    /// 4 MiB block: balances throughput against progress/cancellation granularity.
     private let blockSize: Int
 
     public init(blockSize: Int = 4 * 1024 * 1024) {
         self.blockSize = blockSize
     }
 
-    /// Escribe `imageURL` byte a byte en `destinationURL`. En producción el destino
-    /// es un device crudo; aquí se exige que ya exista el contenedor (el helper crea
-    /// el fd del device; en tests se crea el archivo).
+    /// Writes `imageURL` byte by byte into `destinationURL`. In production the
+    /// destination is a raw device; here the container is required to already exist
+    /// (the helper creates the device fd; in tests the file is created).
     public func write(imageURL: URL,
                       to destinationURL: URL,
                       progress: (Progress) -> Void = { _ in },
@@ -59,8 +59,8 @@ public final class RawImageWriter {
         }
         defer { try? input.close() }
 
-        // El destino debe existir para abrir un handle de escritura (en producción
-        // el device ya existe; en tests creamos el archivo vacío).
+        // The destination must exist to open a write handle (in production the
+        // device already exists; in tests we create the empty file).
         if !FileManager.default.fileExists(atPath: destinationURL.path) {
             FileManager.default.createFile(atPath: destinationURL.path, contents: nil)
         }
@@ -90,7 +90,7 @@ public final class RawImageWriter {
             progress(Progress(bytesWritten: written, totalBytes: total))
         }
 
-        // Garantiza que todo llegó al medio (crítico para un device antes de expulsar).
+        // Guarantees everything reached the medium (critical for a device before ejecting).
         do { try output.synchronize() }
         catch { throw RawWriteError.writeFailed(error.localizedDescription) }
     }

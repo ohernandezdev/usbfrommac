@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Paso 2: elegir el USB. Solo aparecen discos externos extraíbles (el interno
-/// es inalcanzable por diseño). La lista se actualiza en vivo.
+/// Step 2: choose the USB. Only external removable disks appear (the internal
+/// one is unreachable by design). The list updates live.
 struct DiskListView: View {
     @ObservedObject var coordinator: BuildCoordinator
 

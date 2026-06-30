@@ -19,7 +19,7 @@ options:
   groupSortPosition: top
   developmentLanguage: en
 
-# Idiomas soportados (String Catalog en App/Resources/Localizable.xcstrings).
+# Supported languages (String Catalog in App/Resources/Localizable.xcstrings).
 knownRegions:
   - en
   - es
@@ -34,7 +34,7 @@ settings:
     # set DEVELOPMENT_TEAM, and enable ENABLE_HARDENED_RUNTIME.
     CODE_SIGN_STYLE: Manual
     CODE_SIGN_IDENTITY: "-"
-    DEVELOPMENT_TEAM: ""            # <-- rellena tu Apple Team ID para distribución
+    DEVELOPMENT_TEAM: ""            # <-- fill in your Apple Team ID for distribution
 
 targets:
 
@@ -45,21 +45,21 @@ targets:
       - path: App
         excludes:
           - "Resources/**"
-      # wimlib-imagex (Mach-O sin extensión) + sus dylibs van a Contents/Resources
-      # como fase de recursos explícita (XcodeGen no los clasifica solo).
+      # wimlib-imagex (Mach-O with no extension) + its dylibs go to Contents/Resources
+      # as an explicit resources phase (XcodeGen doesn't classify them on its own).
       - path: App/Resources
         buildPhase: resources
         optional: true
       - path: Shared
-      # El launchd plist del daemon se embebe en Contents/Library/LaunchDaemons
-      # (lo que espera SMAppService.daemon(plistName:)).
+      # The daemon's launchd plist is embedded in Contents/Library/LaunchDaemons
+      # (what SMAppService.daemon(plistName:) expects).
       - path: Helper/com.omarhernandez.usbfrommac.helper.plist
         buildPhase:
           copyFiles:
             destination: wrapper
             subpath: Contents/Library/LaunchDaemons
     dependencies:
-      # El ejecutable del helper se copia (y firma) en Contents/MacOS.
+      # The helper executable is copied (and signed) into Contents/MacOS.
       - target: UsbFromMacHelper
         embed: true
         copy:
@@ -81,7 +81,7 @@ targets:
     sources:
       - path: Helper
         excludes:
-          - "com.omarhernandez.usbfrommac.helper.plist"   # se embebe desde el target app
+          - "com.omarhernandez.usbfrommac.helper.plist"   # embedded from the app target
       - path: Shared
     settings:
       base:

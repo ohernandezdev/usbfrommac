@@ -1,27 +1,27 @@
 import Foundation
 
-/// Formato legible de las métricas de progreso (bytes, porcentaje, velocidad, ETA).
-/// Funciones puras → testeables sin UI.
+/// Human-readable formatting of progress metrics (bytes, percentage, speed, ETA).
+/// Pure functions → testable without UI.
 public enum ProgressFormatter {
 
-    /// Tamaño legible: "3,2 GB" (estilo de archivo, base 1000 como Finder).
+    /// Human-readable size: "3.2 GB" (file style, base 1000 like Finder).
     public static func bytes(_ n: UInt64) -> String {
         ByteCountFormatter.string(fromByteCount: Int64(min(n, UInt64(Int64.max))), countStyle: .file)
     }
 
-    /// Porcentaje entero clampeado a 0…100: 0.47 → "47 %".
+    /// Integer percentage clamped to 0…100: 0.47 → "47 %".
     public static func percent(_ fraction: Double) -> String {
         let clamped = min(1, max(0, fraction))
         return "\(Int((clamped * 100).rounded())) %"
     }
 
-    /// Velocidad: bytes/seg → "42 MB/s". Devuelve "—" si no hay tasa válida.
+    /// Speed: bytes/sec → "42 MB/s". Returns "—" if there's no valid rate.
     public static func rate(_ bytesPerSecond: Double) -> String {
         guard bytesPerSecond > 0 else { return "—" }
         return bytes(UInt64(bytesPerSecond)) + "/s"
     }
 
-    /// Duración legible: 45 → "45 s", 72 → "1 min 12 s", 120 → "2 min".
+    /// Human-readable duration: 45 → "45 s", 72 → "1 min 12 s", 120 → "2 min".
     public static func duration(_ seconds: TimeInterval) -> String {
         let total = max(0, Int(seconds.rounded()))
         if total < 60 { return loc("duration.seconds \(total)") }
@@ -32,18 +32,18 @@ public enum ProgressFormatter {
             : loc("duration.minutesSeconds \(minutes) \(rem)")
     }
 
-    /// Tiempo estimado restante, o `nil` si la velocidad es demasiado baja/inestable.
+    /// Estimated time remaining, or `nil` if the speed is too low/unstable.
     public static func eta(remainingBytes: UInt64, bytesPerSecond: Double) -> String? {
         guard bytesPerSecond > 1 else { return nil }
         return duration(Double(remainingBytes) / bytesPerSecond)
     }
 
-    /// Línea completa de transferencia:
-    /// "3,2 GB de 6,8 GB (47 %) · 42 MB/s · faltan 1 min 12 s".
-    /// Las partes de velocidad/ETA se omiten si no hay tasa fiable aún.
+    /// Full transfer line:
+    /// "3.2 GB of 6.8 GB (47 %) · 42 MB/s · 1 min 12 s left".
+    /// The speed/ETA parts are omitted if there's no reliable rate yet.
     public static func transferLine(done: UInt64, total: UInt64, bytesPerSecond: Double?) -> String {
         let fraction = total == 0 ? 0 : Double(done) / Double(total)
-        // "3,2 GB de 6,8 GB (47 %)" → clave parametrizada %@ %@ %@.
+        // "3.2 GB of 6.8 GB (47 %)" → parameterized key %@ %@ %@.
         var parts = [loc("transfer.progress \(bytes(done)) \(bytes(total)) \(percent(fraction))")]
         if let bps = bytesPerSecond, bps > 0 {
             parts.append(rate(bps))

@@ -3,7 +3,7 @@ import XCTest
 
 final class ISOBootDetectorTests: XCTestCase {
 
-    // MARK: Firma MBR (sector 0, offset 510-511 = 0x55AA)
+    // MARK: MBR signature (sector 0, offset 510-511 = 0x55AA)
 
     func testMBRSignaturePresent() {
         var s = Data(repeating: 0, count: 512)
@@ -20,7 +20,7 @@ final class ISOBootDetectorTests: XCTestCase {
         XCTAssertFalse(ISOBootDetector.hasMBRSignature(sector0: Data(repeating: 0, count: 100)))
     }
 
-    // MARK: Descriptor El Torito (sector 17)
+    // MARK: El Torito descriptor (sector 17)
 
     func testElToritoRecognized() {
         var b = [UInt8](repeating: 0, count: 64)
@@ -32,21 +32,21 @@ final class ISOBootDetectorTests: XCTestCase {
     }
 
     func testElToritoRejectsPlainISO9660() {
-        // Un descriptor primario normal empieza con 0x01 "CD001", no es boot record.
+        // A normal primary descriptor starts with 0x01 "CD001"; it's not a boot record.
         var b = [UInt8](repeating: 0, count: 64)
         b[0] = 0x01
         b.replaceSubrange(1...5, with: Array("CD001".utf8))
         XCTAssertFalse(ISOBootDetector.hasElTorito(sector17: Data(b)))
     }
 
-    // MARK: Clasificación (prioridad de estrategia)
+    // MARK: Classification (strategy priority)
 
     func testClassifyWindowsWins() {
         XCTAssertEqual(ISOBootDetector.classify(isWindows: true, hasMBR: true, hasElTorito: true), .windows)
     }
 
     func testClassifyHybridRawForLinux() {
-        // No Windows pero con MBR híbrido → escritura cruda.
+        // Not Windows but with a hybrid MBR → raw write.
         XCTAssertEqual(ISOBootDetector.classify(isWindows: false, hasMBR: true, hasElTorito: true), .hybridRaw)
     }
 
@@ -65,10 +65,10 @@ final class ISOBootDetectorTests: XCTestCase {
         XCTAssertFalse(ISOBootType.notBootable.isSupportable)
     }
 
-    // MARK: Detección end-to-end leyendo un archivo sintético
+    // MARK: End-to-end detection reading a synthetic file
 
     func testDetectHybridFromSyntheticFile() throws {
-        // Construye un "ISO" mínimo: 18 sectores; MBR 0x55AA + El Torito en sector 17.
+        // Build a minimal "ISO": 18 sectors; MBR 0x55AA + El Torito in sector 17.
         var data = Data(count: ISOBootDetector.bootRecordOffset + 64)
         data[510] = 0x55; data[511] = 0xAA
         let off = ISOBootDetector.bootRecordOffset

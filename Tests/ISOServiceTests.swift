@@ -18,7 +18,7 @@ final class ISOServiceTests: XCTestCase {
         return url
     }
 
-    // MARK: SHA-256 (CA-3) — vectores conocidos, valida el streaming
+    // MARK: SHA-256 (CA-3) — known vectors, validates the streaming
 
     func testSHA256OfKnownVectorABC() throws {
         let url = try writeTemp("abc")
@@ -51,7 +51,7 @@ final class ISOServiceTests: XCTestCase {
         XCTAssertFalse(ISOService.hashesMatch("abc", "abd"))
     }
 
-    // MARK: Secure Boot (S-7) — clasificador puro
+    // MARK: Secure Boot (S-7) — pure classifier
 
     func testSecureBootClassifyModern() {
         let recent = SecureBootConcern.cutoff2023.addingTimeInterval(86_400)
@@ -67,7 +67,7 @@ final class ISOServiceTests: XCTestCase {
         XCTAssertEqual(SecureBootConcern.classify(newestBootFileDate: nil), .unknown)
     }
 
-    // MARK: Lógica de split FAT32
+    // MARK: FAT32 split logic
 
     func testRequiresSplitWhenWIMOverFourGiB() {
         let info = makeISOInfo(wimSize: ISOInfo.fat32FileLimit + 1)
@@ -84,7 +84,7 @@ final class ISOServiceTests: XCTestCase {
         XCTAssertFalse(info.requiresWIMSplit)
     }
 
-    // MARK: Normalización de dev node
+    // MARK: Dev node normalization
 
     func testWholeDevNodeStripsPartition() {
         XCTAssertEqual(ISOService.wholeDevNode(from: "/dev/disk7s1"), "/dev/disk7")

@@ -1,22 +1,22 @@
 import Foundation
 
-/// Fuente de discos: abstrae de DÓNDE vienen los candidatos crudos.
+/// Disk source: abstracts WHERE the raw candidates come from.
 ///
-/// La implementación de producción (`DiskArbitrationSource`) usa DiskArbitration
-/// + IOKit. En tests se usa una fuente fake que emite candidatos a voluntad, de
-/// modo que `DiskService` y el filtrado se prueban sin hardware real.
+/// The production implementation (`DiskArbitrationSource`) uses DiskArbitration
+/// + IOKit. Tests use a fake source that emits candidates on demand, so that
+/// `DiskService` and the filtering are tested without real hardware.
 public protocol DiskEnumerating: AnyObject {
 
-    /// Se invoca con la lista COMPLETA de candidatos crudos cada vez que cambia
-    /// el conjunto de discos (al conectar/desconectar). Siempre en el hilo principal.
+    /// Invoked with the FULL list of raw candidates every time the set of disks
+    /// changes (on connect/disconnect). Always on the main thread.
     var onChange: (([DiskCandidate]) -> Void)? { get set }
 
-    /// Empieza a observar y entrega de inmediato el estado actual vía `onChange`.
+    /// Starts observing and immediately delivers the current state via `onChange`.
     func start()
 
-    /// Deja de observar.
+    /// Stops observing.
     func stop()
 
-    /// Snapshot síncrono del estado actual.
+    /// Synchronous snapshot of the current state.
     func currentCandidates() -> [DiskCandidate]
 }

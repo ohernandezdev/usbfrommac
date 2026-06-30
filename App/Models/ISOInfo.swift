@@ -1,27 +1,27 @@
 import Foundation
 
-/// Resultado de inspeccionar un ISO montado.
+/// Result of inspecting a mounted ISO.
 public struct ISOInfo: Equatable {
 
     public let url: URL
     public let sizeBytes: UInt64
     public let volumeName: String?
 
-    /// `true` si parece un instalador de Windows (setup + carpeta sources + imagen).
+    /// `true` if it looks like a Windows installer (setup + sources folder + image).
     public let isWindowsInstaller: Bool
 
-    /// Tamaño de `sources/install.wim` si existe.
+    /// Size of `sources/install.wim` if it exists.
     public let installWIMSizeBytes: UInt64?
 
-    /// `true` si la imagen es `install.esd` (suele caber en FAT32 sin dividir).
+    /// `true` if the image is `install.esd` (usually fits on FAT32 without splitting).
     public let usesESD: Bool
 
-    /// Fecha de modificación más reciente entre los archivos de arranque EFI.
-    /// Se usa como proxy para la advertencia de Secure Boot 2023 (S-7).
+    /// Most recent modification date among the EFI boot files.
+    /// Used as a proxy for the Secure Boot 2023 warning (S-7).
     public let newestBootFileDate: Date?
 
-    /// Cómo debe escribirse este ISO para que el USB arranque (determina la
-    /// estrategia: copia FAT32 para Windows vs. escritura cruda para isohíbridos).
+    /// How this ISO must be written for the USB to boot (determines the
+    /// strategy: FAT32 copy for Windows vs. raw write for isohybrids).
     public let bootType: ISOBootType
 
     public init(url: URL, sizeBytes: UInt64, volumeName: String?,
@@ -38,40 +38,40 @@ public struct ISOInfo: Equatable {
         self.bootType = bootType
     }
 
-    /// `true` si la app puede crear un USB booteable de este ISO (Windows o isohíbrido).
+    /// `true` if the app can create a bootable USB from this ISO (Windows or isohybrid).
     public var bootIsSupported: Bool { bootType.isSupportable }
 
-    /// Límite duro de FAT32 por archivo: 4 GiB.
+    /// Hard FAT32 per-file limit: 4 GiB.
     public static let fat32FileLimit: UInt64 = 4 * 1024 * 1024 * 1024
 
-    /// `true` si `install.wim` supera FAT32 y hay que dividirlo con wimlib (RF-8).
+    /// `true` if `install.wim` exceeds FAT32 and must be split with wimlib (RF-8).
     public var requiresWIMSplit: Bool {
         (installWIMSizeBytes ?? 0) > ISOInfo.fat32FileLimit
     }
 
-    /// Clasificación de riesgo Secure Boot según la fecha de los archivos de arranque.
+    /// Secure Boot risk classification based on the date of the boot files.
     public var secureBootConcern: SecureBootConcern {
         SecureBootConcern.classify(newestBootFileDate: newestBootFileDate)
     }
 }
 
-/// Advertencia de compatibilidad con Secure Boot (S-7).
+/// Secure Boot compatibility warning (S-7).
 ///
-/// El certificado "PCA 2011" se revoca en 2026; solo los ISOs firmados con
-/// "Windows UEFI CA 2023" arrancan con Secure Boot garantizado. Detectar el
-/// certificado del bootloader exige parsear firmas PE, así que se usa una
-/// HEURÍSTICA informativa: la fecha de los archivos de arranque. Solo informa,
-/// nunca bloquea.
+/// The "PCA 2011" certificate is revoked in 2026; only ISOs signed with
+/// "Windows UEFI CA 2023" are guaranteed to boot with Secure Boot. Detecting the
+/// bootloader's certificate requires parsing PE signatures, so we use an
+/// informational HEURISTIC: the date of the boot files. It only informs,
+/// never blocks.
 public enum SecureBootConcern: Equatable {
-    /// Los archivos de arranque son recientes → probablemente cert 2023.
+    /// Boot files are recent → probably the 2023 cert.
     case likelyModern
-    /// Archivos de arranque antiguos → puede no arrancar con Secure Boot ON.
+    /// Old boot files → may not boot with Secure Boot ON.
     case possiblyOutdated
-    /// No se pudo determinar la fecha.
+    /// Couldn't determine the date.
     case unknown
 
-    /// Fecha de corte: a partir de aquí asumimos cert 2023 ya integrado.
-    /// (Conservadora: el despliegue amplio del CA 2023 se afianzó en 2024.)
+    /// Cutoff date: from here on we assume the 2023 cert is already baked in.
+    /// (Conservative: the broad rollout of the CA 2023 took hold in 2024.)
     public static var cutoff2023: Date {
         var c = DateComponents()
         c.year = 2024; c.month = 6; c.day = 1

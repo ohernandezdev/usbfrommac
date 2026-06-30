@@ -1,24 +1,24 @@
 import Foundation
 
-/// Fases del proceso de creación del USB (orden y peso para la barra global).
+/// Phases of the USB creation process (order and weight for the global bar).
 public enum BuildPhase: Equatable {
     case idle
-    case formatting     // Formatear (root, vía helper)        — flujo Windows
-    case copying        // Copiar archivos del ISO (menos install.wim) — flujo Windows
-    case splitting      // Dividir install.wim en .swm           — flujo Windows
-    case writingImage   // Escribir el ISO crudo (dd) al disco    — flujo Linux/raw
-    case finalizing     // Desmontar ISO + expulsar USB           — ambos flujos
+    case formatting     // Format (root, via helper)             — Windows flow
+    case copying        // Copy ISO files (except install.wim)   — Windows flow
+    case splitting      // Split install.wim into .swm           — Windows flow
+    case writingImage   // Write the raw ISO (dd) to the disk    — Linux/raw flow
+    case finalizing     // Unmount ISO + eject USB               — both flows
     case done
     case failed(String)
     case cancelled
 
-    /// Fases del flujo Windows (copia a FAT32), en orden.
+    /// Windows-flow phases (copy to FAT32), in order.
     public static let ordered: [BuildPhase] = [.formatting, .copying, .splitting, .finalizing]
 
-    /// Fases del flujo raw (Linux/isohíbrido), en orden.
+    /// Raw-flow phases (Linux/isohybrid), in order.
     public static let rawOrdered: [BuildPhase] = [.writingImage, .finalizing]
 
-    /// Secuencia de fases a mostrar según el tipo de arranque del ISO.
+    /// Phase sequence to show based on the ISO's boot type.
     public static func sequence(for bootType: ISOBootType) -> [BuildPhase] {
         switch bootType {
         case .windows:                  return ordered
@@ -27,7 +27,7 @@ public enum BuildPhase: Equatable {
         }
     }
 
-    /// Título legible para la UI (localizado ES/EN vía String Catalog).
+    /// Human-readable title for the UI (localized ES/EN via String Catalog).
     public var title: String {
         switch self {
         case .idle:         return loc("phase.idle")
@@ -42,9 +42,9 @@ public enum BuildPhase: Equatable {
         }
     }
 
-    /// Peso relativo en la barra de progreso global.
-    /// `finalizing` vale 0.05 en ambos flujos y siempre cierra el último tramo
-    /// (Windows: tras splitting; raw: tras writingImage) → arranca en 0.95.
+    /// Relative weight in the global progress bar.
+    /// `finalizing` is worth 0.05 in both flows and always closes the last segment
+    /// (Windows: after splitting; raw: after writingImage) → starts at 0.95.
     public var weight: Double {
         switch self {
         case .formatting:   return 0.05

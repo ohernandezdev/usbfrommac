@@ -1,55 +1,55 @@
 import Foundation
 
-/// Filtro de discos: la "lista blanca a nivel de código" exigida por el goal y
-/// por S-1. Es una función PURA (sin efectos, sin acceso a hardware) para poder
-/// probarla exhaustivamente: se le inyectan candidatos —incluido el disco
-/// interno y el de arranque— y se verifica que SOLO los USB externos sobreviven.
+/// Disk filter: the "code-level whitelist" required by the goal and by S-1. It
+/// is a PURE function (no side effects, no hardware access) so it can be tested
+/// exhaustively: candidates are injected —including the internal and boot disk—
+/// and it is verified that ONLY external USB drives survive.
 ///
-/// Es la capa 1 de una defensa en profundidad de 3 capas:
-///   1. `DiskFilter`        — la app jamás lista ni permite un disco no elegible.
-///   2. Helper root         — revalida whole+external+removable antes de eraseDisk (S-4).
-///   3. Re-resolución JIT   — se vuelve a comprobar el identificador justo antes
-///                            de formatear (S-3).
+/// It is layer 1 of a 3-layer defense in depth:
+///   1. `DiskFilter`        — the app never lists or allows an ineligible disk.
+///   2. Root helper         — revalidates whole+external+removable before eraseDisk (S-4).
+///   3. JIT re-resolution   — the identifier is re-checked right before
+///                            formatting (S-3).
 public struct DiskFilter {
 
-    /// BSD del disco de arranque del sistema (p. ej. "disk3"), si se pudo resolver.
-    /// Va a una lista NEGRA explícita: aunque algún candidato viniese mal marcado
-    /// como externo, si es el disco de arranque queda excluido sí o sí.
+    /// BSD of the system boot disk (e.g. "disk3"), if it could be resolved.
+    /// It goes into an explicit BLACKLIST: even if a candidate were mistakenly
+    /// marked as external, if it is the boot disk it is excluded no matter what.
     public let bootDiskBSDName: String?
 
     public init(bootDiskBSDName: String?) {
         self.bootDiskBSDName = bootDiskBSDName
     }
 
-    /// Decide si un candidato puede ofrecerse al usuario como destino USB.
+    /// Decides whether a candidate can be offered to the user as a USB target.
     ///
-    /// Regla de lista blanca (TODAS deben cumplirse):
-    ///   - es un disco físico COMPLETO (no partición ni volumen sintético),
-    ///   - NO es interno,
-    ///   - es removible o expulsable (pendrive),
-    ///   - NO es el disco de arranque del sistema (lista negra),
-    ///   - tiene tamaño > 0.
+    /// Whitelist rule (ALL must hold):
+    ///   - it is a WHOLE physical disk (not a partition or synthetic volume),
+    ///   - it is NOT internal,
+    ///   - it is removable or ejectable (flash drive),
+    ///   - it is NOT the system boot disk (blacklist),
+    ///   - it has size > 0.
     public func isEligible(_ c: DiskCandidate) -> Bool {
-        // Capa de exclusión dura: nunca el disco de arranque, pase lo que pase.
+        // Hard exclusion layer: never the boot disk, no matter what.
         if let boot = bootDiskBSDName, c.wholeDiskBSDName == boot {
             return false
         }
-        guard c.isWholeDisk else { return false }   // solo discos completos
-        guard !c.isInternal else { return false }   // jamás internos
-        // Excluir dispositivos NO físicos (imágenes de disco montadas, interfaces
-        // virtuales de VMs, cryptexes…): aparecen como externos+removibles pero no
-        // son pendrives USB. macOS los reporta con protocolo "Disk Image" o
-        // "Virtual Interface", y/o modelo "Disk Image".
+        guard c.isWholeDisk else { return false }   // whole disks only
+        guard !c.isInternal else { return false }   // never internal
+        // Exclude NON-physical devices (mounted disk images, virtual VM
+        // interfaces, cryptexes…): they show up as external+removable but are not
+        // USB flash drives. macOS reports them with protocol "Disk Image" or
+        // "Virtual Interface", and/or model "Disk Image".
         if Self.isVirtualOrImage(c) { return false }
-        guard c.isRemovable || c.isEjectable else { return false } // debe ser USB extraíble
+        guard c.isRemovable || c.isEjectable else { return false } // must be removable USB
         guard c.sizeBytes > 0 else { return false }
         return true
     }
 
-    /// `true` si el candidato es una imagen de disco o un dispositivo virtual
-    /// (no un medio físico real). Se apoya en varias señales de DiskArbitration
-    /// porque ninguna por sí sola es suficiente (visto en hardware: los disk
-    /// images llegan con protocolo "Virtual Interface", no "Disk Image").
+    /// `true` if the candidate is a disk image or a virtual device (not a real
+    /// physical medium). It relies on several DiskArbitration signals because no
+    /// single one is sufficient on its own (seen in hardware: disk images arrive
+    /// with protocol "Virtual Interface", not "Disk Image").
     static func isVirtualOrImage(_ c: DiskCandidate) -> Bool {
         if let p = c.busProtocol?.lowercased(),
            p == "disk image" || p.contains("virtual") {
@@ -61,8 +61,8 @@ public struct DiskFilter {
         return false
     }
 
-    /// Aplica el filtro a una lista cruda y devuelve `Disk` listos para la UI,
-    /// ordenados de forma estable por identificador BSD.
+    /// Applies the filter to a raw list and returns `Disk` values ready for the
+    /// UI, stably sorted by BSD identifier.
     public func eligibleDisks(from candidates: [DiskCandidate]) -> [Disk] {
         candidates
             .filter(isEligible)

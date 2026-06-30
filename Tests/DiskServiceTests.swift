@@ -1,13 +1,13 @@
 import XCTest
 @testable import UsbFromMac
 
-/// Tests de `DiskService` con una fuente fake: verifican que el servicio solo
-/// publica USB elegibles y que reacciona a conexión/desconexión en vivo (RF-1),
-/// sin depender de hardware real.
+/// Tests for `DiskService` with a fake source: they verify that the service only
+/// publishes eligible USB drives and that it reacts to live connect/disconnect (RF-1),
+/// without depending on real hardware.
 final class DiskServiceTests: XCTestCase {
 
-    /// Fuente de discos falsa controlable desde el test. Emite `onChange` de forma
-    /// síncrona en el hilo del test (main), igual que el contrato de la fuente real.
+    /// Fake disk source controllable from the test. Emits `onChange` synchronously
+    /// on the test thread (main), just like the contract of the real source.
     private final class FakeDiskSource: DiskEnumerating {
         var onChange: (([DiskCandidate]) -> Void)?
         private(set) var startCalled = false
@@ -20,7 +20,7 @@ final class DiskServiceTests: XCTestCase {
         func stop() { stopCalled = true }
         func currentCandidates() -> [DiskCandidate] { candidates }
 
-        /// Simula un cambio en caliente (conectar/desconectar) y notifica.
+        /// Simulates a hot-plug change (connect/disconnect) and notifies.
         func emit(_ newCandidates: [DiskCandidate]) {
             candidates = newCandidates
             onChange?(candidates)
@@ -64,11 +64,11 @@ final class DiskServiceTests: XCTestCase {
         service.start()
         XCTAssertTrue(service.disks.isEmpty)
 
-        // Se conecta un USB.
+        // A USB is connected.
         source.emit([internalDisk("disk0"), usb("disk4", "WIN11")])
         XCTAssertEqual(service.disks.map(\.id), ["disk4"])
 
-        // Se desconecta.
+        // It is disconnected.
         source.emit([internalDisk("disk0")])
         XCTAssertTrue(service.disks.isEmpty)
     }

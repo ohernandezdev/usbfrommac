@@ -1,14 +1,14 @@
 import Foundation
 
-/// Resuelve el disco físico de arranque del sistema (el que respalda "/").
+/// Resolves the system's physical boot disk (the one backing "/").
 ///
-/// Se usa para construir la lista NEGRA del `DiskFilter`: ese disco nunca puede
-/// ofrecerse como destino, ni aunque viniera mal etiquetado por DiskArbitration.
+/// Used to build the `DiskFilter` BLACKLIST: that disk can never be offered as a
+/// destination, not even if it came mislabeled by DiskArbitration.
 public enum SystemBootDisk {
 
-    /// Identificador BSD del disco COMPLETO que respalda "/", p. ej. "disk3".
-    /// Devuelve `nil` si no se puede resolver (en cuyo caso el filtro sigue
-    /// excluyendo internos por sus otras reglas).
+    /// BSD identifier of the WHOLE disk backing "/", e.g. "disk3".
+    /// Returns `nil` if it can't be resolved (in which case the filter keeps
+    /// excluding internal disks via its other rules).
     public static func bsdName() -> String? {
         var stat = statfs()
         guard statfs("/", &stat) == 0 else { return nil }
@@ -17,7 +17,7 @@ public enum SystemBootDisk {
             let ptr = raw.baseAddress!.assumingMemoryBound(to: CChar.self)
             return String(cString: ptr)
         }
-        // from ≈ "/dev/disk3s1s1" -> queremos "disk3".
+        // from ≈ "/dev/disk3s1s1" -> we want "disk3".
         let device = from.hasPrefix("/dev/") ? String(from.dropFirst(5)) : from
         let whole = DiskCandidate.wholeDiskBSDName(from: device)
         return whole.hasPrefix("disk") ? whole : nil

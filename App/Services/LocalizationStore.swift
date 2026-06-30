@@ -1,7 +1,7 @@
 import Foundation
 import SwiftUI
 
-/// Idioma de la interfaz elegido por el usuario (in-app, no el del sistema).
+/// Interface language chosen by the user (in-app, not the system one).
 public enum AppLanguage: String, CaseIterable, Identifiable {
     case system
     case en
@@ -9,7 +9,7 @@ public enum AppLanguage: String, CaseIterable, Identifiable {
 
     public var id: String { rawValue }
 
-    /// Nombre del idioma en su propio idioma (para el selector).
+    /// Name of the language in its own language (for the selector).
     public var displayName: String {
         switch self {
         case .system: return loc("lang.system")
@@ -19,10 +19,10 @@ public enum AppLanguage: String, CaseIterable, Identifiable {
     }
 }
 
-/// Fuente de verdad del idioma de la UI. Permite forzar ES/EN en vivo (sin
-/// reiniciar) sobre el idioma del sistema. Singleton para que el helper global
-/// `loc(_:)` —usado por modelos y servicios— resuelva en el idioma elegido, y a
-/// la vez `ObservableObject` para que SwiftUI re-renderice al cambiarlo.
+/// Source of truth for the UI language. Lets you force ES/EN live (without
+/// restarting) over the system language. A singleton so the global helper
+/// `loc(_:)` —used by models and services— resolves in the chosen language, and
+/// at the same time an `ObservableObject` so SwiftUI re-renders when it changes.
 public final class LocalizationStore: ObservableObject {
     public static let shared = LocalizationStore()
 
@@ -37,7 +37,7 @@ public final class LocalizationStore: ObservableObject {
         language = AppLanguage(rawValue: raw) ?? .system
     }
 
-    /// Locale efectivo (para `.environment(\.locale,)` y para `loc(_:)`).
+    /// Effective locale (for `.environment(\.locale,)` and for `loc(_:)`).
     public var locale: Locale {
         switch language {
         case .system: return Locale.autoupdatingCurrent
@@ -45,10 +45,10 @@ public final class LocalizationStore: ObservableObject {
         }
     }
 
-    /// Bundle de recursos del idioma elegido (el `.lproj` correspondiente), o el
-    /// bundle principal cuando se sigue al sistema. NO hay fallback silencioso: si
-    /// el `.lproj` no existiera, se usa el bundle principal (que resuelve por el
-    /// idioma del sistema), nunca una cadena vacía.
+    /// Resource bundle for the chosen language (the matching `.lproj`), or the
+    /// main bundle when following the system. There's NO silent fallback: if the
+    /// `.lproj` didn't exist, the main bundle is used (which resolves by the system
+    /// language), never an empty string.
     public var bundle: Bundle {
         guard language != .system,
               let path = Bundle.main.path(forResource: language.rawValue, ofType: "lproj"),
@@ -58,9 +58,9 @@ public final class LocalizationStore: ObservableObject {
     }
 }
 
-/// Traducción que respeta el idioma elegido en `LocalizationStore`. Equivalente a
-/// `String(localized:)` pero forzando bundle+locale del idioma in-app, de modo que
-/// los textos programáticos (errores, progreso) cambien junto con la UI.
+/// Translation that respects the language chosen in `LocalizationStore`. Equivalent
+/// to `String(localized:)` but forcing the in-app language's bundle+locale, so that
+/// programmatic text (errors, progress) changes along with the UI.
 public func loc(_ key: String.LocalizationValue) -> String {
     let store = LocalizationStore.shared
     return String(localized: key, bundle: store.bundle, locale: store.locale)

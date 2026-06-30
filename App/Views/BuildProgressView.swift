@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Paso 4: progreso por fases, y el resultado final (éxito / error / cancelado).
+/// Step 4: per-phase progress, and the final result (success / error / cancelled).
 struct BuildProgressView: View {
     @ObservedObject var coordinator: BuildCoordinator
 
@@ -21,7 +21,7 @@ struct BuildProgressView: View {
         }
     }
 
-    // MARK: En curso
+    // MARK: In progress
 
     private var runningView: some View {
         VStack(alignment: .leading, spacing: Carbon.Space.lg) {
@@ -44,7 +44,7 @@ struct BuildProgressView: View {
                 Spacer()
                 Button("common.cancel") { coordinator.cancel() }
                     .buttonStyle(CarbonButton(kind: .tertiary))
-                    // El dd raw no es interrumpible → no se puede cancelar a mitad.
+                    // The raw dd is not interruptible → it can't be cancelled midway.
                     .disabled(!coordinator.isBuilding || coordinator.progress.phase == .writingImage)
             }
             .padding(.top, Carbon.Space.sm)
@@ -52,7 +52,7 @@ struct BuildProgressView: View {
         }
     }
 
-    // MARK: Éxito
+    // MARK: Success
 
     private var successView: some View {
         VStack(alignment: .leading, spacing: Carbon.Space.lg) {
@@ -86,7 +86,7 @@ struct BuildProgressView: View {
         }
     }
 
-    // MARK: Resultado (error / cancelado)
+    // MARK: Result (error / cancelled)
 
     private func resultView(icon: String, color: Color, title: LocalizedStringKey, message: Text) -> some View {
         VStack(alignment: .leading, spacing: Carbon.Space.lg) {
@@ -110,7 +110,7 @@ struct BuildProgressView: View {
         }
     }
 
-    // MARK: Filas de fase
+    // MARK: Phase rows
 
     private func phaseRow(_ p: BuildPhase) -> some View {
         let state = phaseState(p)
@@ -133,8 +133,8 @@ struct BuildProgressView: View {
         }
     }
 
-    /// Detalle en vivo de la fase activa: barra + métricas reales, o heartbeat
-    /// (tiempo transcurrido) para fases sin sub-progreso como Formatear.
+    /// Live detail of the active phase: bar + real metrics, or heartbeat
+    /// (elapsed time) for phases without sub-progress like Formatting.
     @ViewBuilder
     private func activeDetail(_ p: BuildPhase) -> some View {
         let prog = coordinator.progress
@@ -153,8 +153,8 @@ struct BuildProgressView: View {
         }
     }
 
-    /// Línea con "latido": el tiempo transcurrido avanza solo aunque la fase no
-    /// reporte sub-progreso, para que NO parezca congelada.
+    /// Line with a "heartbeat": the elapsed time keeps advancing on its own even
+    /// when the phase reports no sub-progress, so it does NOT look frozen.
     private func heartbeatRow(label: String) -> some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let start = coordinator.phaseStartedAt ?? context.date
