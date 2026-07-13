@@ -1,31 +1,31 @@
 #!/usr/bin/env bash
 #
-# dogfood.sh — build LOCAL FIRMADO para probar la app de verdad en tu Mac.
+# dogfood.sh — SIGNED LOCAL build to test the app for real on your Mac.
 #
-# Firmar aquí NO es distribuir: es solo para que macOS deje REGISTRAR el helper
-# root (SMAppService) que ejecuta el formateo. No notariza ni publica nada.
+# Signing here is NOT distribution: it's only so macOS lets you REGISTER the root
+# helper (SMAppService) that runs the formatting. It does not notarize or publish anything.
 #
-# Qué hace:
-#   1. Empaqueta wimlib-imagex + dylibs (si wimlib está instalado) y los firma.
-#   2. Compila Release firmado con tu Developer ID + hardened runtime.
-#   3. Re-firma helper embebido y app, y verifica la firma.
-#   4. Instala la app en /Applications (ubicación estable que SMAppService espera).
-#   NUNCA formatea nada: eso lo haces tú desde la app con un USB de prueba.
+# What it does:
+#   1. Packages wimlib-imagex + dylibs (if wimlib is installed) and signs them.
+#   2. Builds a signed Release with your Developer ID + hardened runtime.
+#   3. Re-signs the embedded helper and app, and verifies the signature.
+#   4. Installs the app in /Applications (stable location that SMAppService expects).
+#   It NEVER formats anything: you do that yourself from the app with a test USB.
 #
-# Uso:  scripts/dogfood.sh
+# Usage:  scripts/dogfood.sh
 #
-set -eo pipefail   # sin 'u' (nounset): evita falsos "unbound variable" en algunos shells
+set -eo pipefail   # without 'u' (nounset): avoids false "unbound variable" in some shells
 
-# --- Tu identidad de firma (Team C34D3V8484). Cambia si usas otra cuenta. ---
+# --- Your signing identity (Team C34D3V8484). Change it if you use another account. ---
 IDENTITY="Developer ID Application: Omar Jesus Hernandez Bastos (C34D3V8484)"
 TEAM="C34D3V8484"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
-APP_NAME="WinUSBMac.app"
+APP_NAME="UsbFromMac.app"
 INSTALL="/Applications/$APP_NAME"
 
-# 1. wimlib (opcional pero necesario para dividir install.wim) ----------------
+# 1. wimlib (optional but required to split install.wim) ----------------------
 WIMLIB=""
 PREFIX=""
 for p in /opt/homebrew/bin/wimlib-imagex /usr/local/bin/wimlib-imagex; do
@@ -36,22 +36,22 @@ for p in /opt/homebrew/bin/wimlib-imagex /usr/local/bin/wimlib-imagex; do
   fi
 done
 if [ -n "$WIMLIB" ]; then
-  echo "▸ Empaquetando wimlib firmado desde $PREFIX…"
+  echo "▸ Packaging signed wimlib from $PREFIX…"
   scripts/package-wimlib.sh "$PREFIX" "$IDENTITY"
 else
-  echo "⚠ wimlib NO instalado (brew install wimlib)."
-  echo "  La app se construirá y podrás probar Formatear + Copiar, pero la fase"
-  echo "  DIVIDIR install.wim fallará con un error claro hasta que instales wimlib."
+  echo "⚠ wimlib NOT installed (brew install wimlib)."
+  echo "  The app will build and you'll be able to test Format + Copy, but the"
+  echo "  SPLIT install.wim phase will fail with a clear error until you install wimlib."
   rm -f App/Resources/wimlib-imagex App/Resources/*.dylib 2>/dev/null || true
 fi
 
-# 2. Generar y compilar firmado ----------------------------------------------
-echo "▸ Generando proyecto…"
+# 2. Generate and build signed -----------------------------------------------
+echo "▸ Generating project…"
 xcodegen generate
 
-echo "▸ Compilando firmado (Developer ID + hardened runtime)…"
+echo "▸ Building signed (Developer ID + hardened runtime)…"
 rm -rf build/dd
-xcodebuild -project WinUSBMac.xcodeproj -scheme WinUSBMac -configuration Release \
+xcodebuild -project UsbFromMac.xcodeproj -scheme UsbFromMac -configuration Release \
   -derivedDataPath build/dd \
   CODE_SIGN_STYLE=Manual \
   CODE_SIGN_IDENTITY="$IDENTITY" \
@@ -62,30 +62,30 @@ xcodebuild -project WinUSBMac.xcodeproj -scheme WinUSBMac -configuration Release
 
 APP="build/dd/Build/Products/Release/$APP_NAME"
 
-# 3. Re-firmar helper + app (sella el bundle con hardened runtime) ------------
-echo "▸ Re-firmando helper y app…"
-# --identifier: un tool sin Info.plist se firma con el nombre del ejecutable
-# ("WinUSBMacHelper"); el requisito XPC exige "com.omar.winusbmac.helper".
+# 3. Re-sign helper + app (seals the bundle with hardened runtime) ------------
+echo "▸ Re-signing helper and app…"
+# --identifier: a tool without an Info.plist is signed with the executable's name
+# ("UsbFromMacHelper"); the XPC requirement demands "com.omarhernandez.usbfrommac.helper".
 codesign --force --options runtime --timestamp \
-  --identifier com.omar.winusbmac.helper \
+  --identifier com.omarhernandez.usbfrommac.helper \
   --entitlements Helper/Helper.entitlements --sign "$IDENTITY" \
-  "$APP/Contents/MacOS/WinUSBMacHelper"
+  "$APP/Contents/MacOS/UsbFromMacHelper"
 codesign --force --options runtime --timestamp \
   --entitlements App/App.entitlements --sign "$IDENTITY" "$APP"
-echo "▸ Verificando firma…"
+echo "▸ Verifying signature…"
 codesign --verify --deep --strict --verbose=2 "$APP"
 
-# 4. Instalar en /Applications -----------------------------------------------
-echo "▸ Instalando en $INSTALL…"
-osascript -e 'tell application "WinUSBMac" to quit' 2>/dev/null || true
-pkill -x WinUSBMac 2>/dev/null || true
+# 4. Install in /Applications ------------------------------------------------
+echo "▸ Installing in $INSTALL…"
+osascript -e 'tell application "UsbFromMac" to quit' 2>/dev/null || true
+pkill -x UsbFromMac 2>/dev/null || true
 rm -rf "$INSTALL"
 cp -R "$APP" "$INSTALL"
 
 echo
-echo "✓ Instalada: $INSTALL"
-echo "  Ábrela:  open \"$INSTALL\""
-echo "  Si pide aprobar el componente con privilegios:"
-echo "    Ajustes del Sistema → General → Elementos de inicio → activa «WinUSB Mac»."
-echo "  Logs del helper en otra terminal:"
-echo "    log stream --predicate 'process == \"WinUSBMacHelper\"' --info"
+echo "✓ Installed: $INSTALL"
+echo "  Open it:  open \"$INSTALL\""
+echo "  If it asks you to approve the privileged component:"
+echo "    System Settings → General → Login Items → enable «USB from Mac»."
+echo "  Helper logs in another terminal:"
+echo "    log stream --predicate 'process == \"UsbFromMacHelper\"' --info"

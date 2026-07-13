@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Paso 3: confirmación destructiva explícita (S-2). Muestra nombre y tamaño
-/// exactos y exige una acción deliberada del usuario antes de habilitar el botón.
+/// Step 3: explicit destructive confirmation (S-2). Shows the exact name and size
+/// and requires a deliberate user action before enabling the button.
 struct ConfirmView: View {
     @ObservedObject var coordinator: BuildCoordinator
 
@@ -26,7 +26,21 @@ struct ConfirmView: View {
                 }
                 .carbonCard(surface: Carbon.surface1)
 
-                labelField
+                // The FAT32 label only applies to the Windows flow; the raw (Linux)
+                // flow overwrites the disk with the image and uses no label.
+                if !coordinator.isRawFlow {
+                    labelField
+                }
+
+                // A2: in the raw flow, if the USB can't fit the ISO `dd` would fail
+                // halfway and leave the USB broken. Warn and block (canStartBuild).
+                if let tooSmall = coordinator.rawDiskTooSmallMessage {
+                    HStack(alignment: .top, spacing: Carbon.Space.xs) {
+                        Image(systemName: "exclamationmark.octagon.fill").foregroundStyle(Carbon.error)
+                        Text(verbatim: tooSmall).carbon(.bodySm).foregroundStyle(Carbon.ink)
+                    }
+                    .carbonCard(surface: Carbon.surface1)
+                }
 
                 Toggle(isOn: $coordinator.confirmedDestructive) {
                     Text("confirm.acknowledge \(disk.displayName)")

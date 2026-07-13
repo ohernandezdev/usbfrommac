@@ -1,6 +1,6 @@
 # Security Policy
 
-WinUSB Mac erases disks and runs a privileged (root) helper, so security is central to its design. This document explains the threat model, what is in scope, and how to report a vulnerability.
+USB from Mac erases disks and runs a privileged (root) helper, so security is central to its design. This document explains the threat model, what is in scope, and how to report a vulnerability.
 
 ## Reporting a vulnerability
 
@@ -19,14 +19,14 @@ You will get an acknowledgement as soon as possible. Please give a reasonable wi
 The app's most sensitive capabilities are: (1) it can erase a disk, and (2) it installs and talks to a root daemon. The design goal is that neither capability can be turned against the user's data or system.
 
 - **Wrong-disk erase.** Mitigated by a code-level whitelist: only `external` + `physical` + removable USB media is ever offered, the system boot disk is filtered out, and disk images / virtual devices are rejected. The disk identifier is re-validated immediately before erasing, and the helper independently re-checks the target is removable before acting.
-- **Privilege escalation via the helper.** The helper (`WinUSBMacHelper`) is registered with `SMAppService` and reached over XPC. Its surface is intentionally tiny — effectively only `eraseDisk`. The XPC connection is validated by code-signing requirement so only the legitimate, correctly-signed app can drive it.
-- **Tampered binaries.** The app and helper are signed; the helper is signed with the fixed identifier `com.omar.winusbmac.helper` and the cross-signing requirement must match. Notarized distribution is planned to extend this to download integrity.
+- **Privilege escalation via the helper.** The helper (`UsbFromMacHelper`) is registered with `SMAppService` and reached over XPC. Its surface is intentionally tiny — effectively only `eraseDisk`. The XPC connection is validated by code-signing requirement so only the legitimate, correctly-signed app can drive it.
+- **Tampered binaries.** The app and helper are signed; the helper is signed with the fixed identifier `com.omarhernandez.usbfrommac.helper` and the cross-signing requirement must match. Notarized distribution is planned to extend this to download integrity.
 - **Tampered ISO.** Optional SHA-256 verification lets the user confirm the ISO matches the official hash before writing.
 
 ## In scope
 
 - The disk whitelist / enumeration logic (`DiskFilter`, `DiskArbitrationSource`, `SystemBootDisk`, `DiskRevalidation`).
-- The XPC interface and the privileged helper (`WinUSBMacHelper`, `HelperClient`).
+- The XPC interface and the privileged helper (`UsbFromMacHelper`, `HelperClient`).
 - Code-signing requirement validation between the app and the helper.
 
 ## Out of scope

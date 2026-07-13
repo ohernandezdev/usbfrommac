@@ -1,9 +1,9 @@
 import XCTest
-@testable import WinUSBMac
+@testable import UsbFromMac
 
 final class WimServiceTests: XCTestCase {
 
-    // MARK: Constantes verificadas (Investigación)
+    // MARK: Verified constants (Research)
 
     func testPartSizeIs3800MiB() {
         XCTAssertEqual(WimConstants.partSizeMiB, 3800)
@@ -13,7 +13,7 @@ final class WimServiceTests: XCTestCase {
         XCTAssertEqual(WimConstants.firstSWMName, "install.swm")
     }
 
-    // MARK: Nombres de fragmentos (convención obligatoria de Windows Setup)
+    // MARK: Fragment names (mandatory Windows Setup convention)
 
     func testExpectedSWMNaming() {
         XCTAssertEqual(WimService.expectedSWMName(index: 1), "install.swm")
@@ -22,17 +22,17 @@ final class WimServiceTests: XCTestCase {
         XCTAssertEqual(WimService.expectedSWMName(index: 0), "install.swm")
     }
 
-    // MARK: Cálculo de fragmentos (CA-6)
+    // MARK: Fragment count calculation (CA-6)
 
     func testMinimumPartCount() {
         let gib: UInt64 = 1024 * 1024 * 1024
-        // ~5 GiB con partes de 3800 MiB -> 2 fragmentos.
+        // ~5 GiB with 3800 MiB parts -> 2 fragments.
         XCTAssertEqual(WimService.minimumPartCount(wimSizeBytes: 5 * gib, partSizeMiB: 3800), 2)
-        // 3700 MiB -> 1 fragmento.
+        // 3700 MiB -> 1 fragment.
         XCTAssertEqual(WimService.minimumPartCount(wimSizeBytes: 3700 * 1024 * 1024, partSizeMiB: 3800), 1)
-        // Justo en el límite de una parte (3800 MiB) -> 1.
+        // Exactly at the limit of one part (3800 MiB) -> 1.
         XCTAssertEqual(WimService.minimumPartCount(wimSizeBytes: 3800 * 1024 * 1024, partSizeMiB: 3800), 1)
-        // Un byte más -> 2.
+        // One byte more -> 2.
         XCTAssertEqual(WimService.minimumPartCount(wimSizeBytes: 3800 * 1024 * 1024 + 1, partSizeMiB: 3800), 2)
     }
 
@@ -41,10 +41,10 @@ final class WimServiceTests: XCTestCase {
         XCTAssertEqual(WimService.minimumPartCount(wimSizeBytes: 1000, partSizeMiB: 0), 0)
     }
 
-    // MARK: Construcción del comando
+    // MARK: Command construction
 
     func testSplitCommand() {
-        let binary = URL(fileURLWithPath: "/Applications/WinUSBMac.app/Contents/Resources/wimlib-imagex")
+        let binary = URL(fileURLWithPath: "/Applications/UsbFromMac.app/Contents/Resources/wimlib-imagex")
         let wim = URL(fileURLWithPath: "/Volumes/CCCOMA/sources/install.wim")
         let firstSWM = URL(fileURLWithPath: "/Volumes/WIN11/sources/install.swm")
 
@@ -57,7 +57,7 @@ final class WimServiceTests: XCTestCase {
                                   "3800"])
     }
 
-    // MARK: Sin fallback (CLAUDE.md) — si no hay binario, error claro
+    // MARK: No fallback (CLAUDE.md) — if there's no binary, a clear error
 
     func testSplitThrowsWhenBinaryNotBundled() {
         let service = WimService(binaryURL: nil)

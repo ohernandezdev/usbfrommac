@@ -1,63 +1,86 @@
 import Foundation
 
-/// Contrato XPC entre la app y el privileged helper (daemon root).
+/// XPC contract between the app and the privileged helper (root daemon).
 ///
-/// El helper expone EXCLUSIVAMENTE el formateo destructivo (`diskutil eraseDisk`),
-/// que es la única operación que necesita root. Todo lo demás (montar el ISO,
-/// copiar, dividir el .wim) corre como usuario sobre el volumen ya montado.
+/// The helper exposes EXCLUSIVELY the destructive formatting (`diskutil eraseDisk`),
+/// which is the only operation that requires root. Everything else (mounting the
+/// ISO, copying, splitting the .wim) runs as the user on the already-mounted volume.
 ///
-/// El protocolo se compila en ambos targets (app y helper) compartiendo este
-/// archivo, que es el patrón estándar para NSXPC.
+/// The protocol is compiled into both targets (app and helper) by sharing this
+/// file, which is the standard pattern for NSXPC.
 @objc public protocol HelperProtocol {
 
-    /// Formatea `bsdName` como FAT32 con esquema GPT y la etiqueta dada.
+    /// Formats `bsdName` as FAT32 with a GPT scheme and the given label.
     ///
-    /// SEGURIDAD (S-4): el helper REVALIDA por su cuenta que el target sea un
-    /// disco físico completo, externo y removible antes de ejecutar nada. Nunca
-    /// confía ciegamente en los argumentos recibidos por XPC.
+    /// SECURITY (S-4): the helper REVALIDATES on its own that the target is a
+    /// whole, external, removable physical disk before executing anything. It never
+    /// blindly trusts the arguments received over XPC.
     ///
     /// - Parameters:
-    ///   - bsdName: identificador BSD del disco completo, p. ej. "disk4".
-    ///   - label: etiqueta FAT32 (≤ 11 caracteres, mayúsculas).
-    ///   - reply: `(ok, mensajeDeError?)`.
+    ///   - bsdName: BSD identifier of the whole disk, e.g. "disk4".
+    ///   - label: FAT32 label (≤ 11 characters, uppercase).
+    ///   - reply: `(ok, errorMessage?)`.
     func eraseDisk(bsdName: String,
                    label: String,
                    reply: @escaping (Bool, String?) -> Void)
 
-    /// Versión del helper instalado (para comprobar que app y helper concuerdan).
+    /// Version of the installed helper (to check that app and helper agree).
+    /// Writes `isoPath` RAW (`dd`-style) onto the `bsdName` disk.
+    ///
+    /// For isohybrid ISOs (Linux/BSD) that must be dumped byte by byte to the device.
+    /// Applies the SAME safeguards as `eraseDisk` (S-4): it revalidates that the
+    /// target is whole + external + removable and that it is NOT the boot disk,
+    /// unmounts the disk, and writes to `/dev/rdiskN`. Progress is reported over the
+    /// reverse channel (`HelperProgressProtocol`).
+    ///
+    /// - Parameters:
+    ///   - isoPath: absolute path of the .iso file to dump.
+    ///   - bsdName: BSD identifier of the whole disk, e.g. "disk4".
+    ///   - reply: `(ok, errorMessage?)`.
+    func writeImage(isoPath: String,
+                    bsdName: String,
+                    reply: @escaping (Bool, String?) -> Void)
+
+    /// Version of the installed helper (to check that app and helper agree).
     func helperVersion(reply: @escaping (String) -> Void)
 }
 
-/// Constantes compartidas app ↔ helper.
+/// Reverse progress channel: implemented by the APP and invoked by the HELPER
+/// during a long operation (raw write) to report bytes written live.
+@objc public protocol HelperProgressProtocol {
+    func didWrite(bytes: Int64, of total: Int64)
+}
+
+/// Shared constants app ↔ helper.
 public enum HelperConstants {
-    /// Nombre del Mach service (debe coincidir con el plist launchd y SMAppService).
-    public static let machServiceName = "com.omar.winusbmac.helper"
+    /// Mach service name (must match the launchd plist and SMAppService).
+    public static let machServiceName = "com.omarhernandez.usbfrommac.helper"
 
-    /// Nombre del plist launchd embebido (lo usa SMAppService.daemon(plistName:)).
-    public static let plistName = "com.omar.winusbmac.helper.plist"
+    /// Name of the embedded launchd plist (used by SMAppService.daemon(plistName:)).
+    public static let plistName = "com.omarhernandez.usbfrommac.helper.plist"
 
-    /// Versión del contrato/helper.
+    /// Contract/helper version.
     public static let version = "1.0.0"
 
-    /// Longitud máxima de una etiqueta FAT32.
+    /// Maximum length of a FAT32 label.
     public static let maxFAT32LabelLength = 11
 
-    public static let appBundleID = "com.omar.winusbmac"
-    public static let helperBundleID = "com.omar.winusbmac.helper"
+    public static let appBundleID = "com.omarhernandez.usbfrommac"
+    public static let helperBundleID = "com.omarhernandez.usbfrommac.helper"
 
-    // Apple Team ID: OU del certificado Developer ID; valida la firma cruzada XPC.
-    // (Team de Omar — Developer ID Application C34D3V8484.) Con firma ad-hoc local
-    // ("-") esta validación NO se cumple (es esperado): solo aplica a builds
-    // firmados con Developer ID / Apple Development de este mismo equipo.
+    // Apple Team ID: OU of the Developer ID certificate; validates the cross XPC
+    // signature. (Omar's team — Developer ID Application C34D3V8484.) With local
+    // ad-hoc signing ("-") this validation does NOT pass (which is expected): it
+    // only applies to builds signed with Developer ID / Apple Development from this same team.
     public static let teamID = "C34D3V8484"
 
-    /// Requisito que la APP exige al HELPER (que el helper sea tuyo y no esté suplantado).
+    /// Requirement the APP demands of the HELPER (that the helper is yours and not impersonated).
     public static var helperCodeSigningRequirement: String {
         "identifier \"\(helperBundleID)\" and anchor apple generic and "
         + "certificate leaf[subject.OU] = \"\(teamID)\""
     }
 
-    /// Requisito que el HELPER exige al CLIENTE (que quien le pide formatear sea tu app).
+    /// Requirement the HELPER demands of the CLIENT (that whoever asks it to format is your app).
     public static var clientCodeSigningRequirement: String {
         "identifier \"\(appBundleID)\" and anchor apple generic and "
         + "certificate leaf[subject.OU] = \"\(teamID)\""

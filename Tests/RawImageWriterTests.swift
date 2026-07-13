@@ -1,5 +1,5 @@
 import XCTest
-@testable import WinUSBMac
+@testable import UsbFromMac
 
 final class RawImageWriterTests: XCTestCase {
 
@@ -7,13 +7,13 @@ final class RawImageWriterTests: XCTestCase {
         FileManager.default.temporaryDirectory.appendingPathComponent("\(name)-\(UUID().uuidString)")
     }
 
-    /// Escribir una imagen reproduce los bytes EXACTOS en el destino (lo que un
-    /// `dd` haría sobre el device).
+    /// Writing an image reproduces the EXACT bytes at the destination (what a
+    /// `dd` would do to the device).
     func testWriteReproducesBytesExactly() throws {
         let src = tempURL("src"); let dst = tempURL("dst")
         defer { try? FileManager.default.removeItem(at: src); try? FileManager.default.removeItem(at: dst) }
 
-        // 10 MiB + un resto, para forzar varios bloques de 4 MiB y un bloque parcial.
+        // 10 MiB + a remainder, to force several 4 MiB blocks and one partial block.
         let bytes = (0..<(10 * 1024 * 1024 + 777)).map { UInt8($0 & 0xFF) }
         let payload = Data(bytes)
         try payload.write(to: src)
@@ -24,7 +24,7 @@ final class RawImageWriterTests: XCTestCase {
         XCTAssertEqual(try Data(contentsOf: dst), payload)
     }
 
-    /// El progreso termina en 100% y es monótono creciente.
+    /// Progress ends at 100% and is monotonically increasing.
     func testProgressReachesTotal() throws {
         let src = tempURL("src"); let dst = tempURL("dst")
         defer { try? FileManager.default.removeItem(at: src); try? FileManager.default.removeItem(at: dst) }
@@ -43,7 +43,7 @@ final class RawImageWriterTests: XCTestCase {
         XCTAssertEqual(total, UInt64(payload.count))
     }
 
-    /// Cancelar a mitad lanza `.cancelled` y no completa.
+    /// Cancelling midway throws `.cancelled` and does not complete.
     func testCancellationStops() throws {
         let src = tempURL("src"); let dst = tempURL("dst")
         defer { try? FileManager.default.removeItem(at: src); try? FileManager.default.removeItem(at: dst) }

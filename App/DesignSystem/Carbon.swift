@@ -1,25 +1,25 @@
 import SwiftUI
 import AppKit
 
-/// Sistema de diseño de WinUSB Mac.
+/// USB-from-Mac design system.
 ///
-/// Lenguaje visual: macOS nativo moderno (estilo Sonoma / Raycast / Linear) —
-/// superficies redondeadas con profundidad por sombra suave (no hairlines duros),
-/// tipografía del sistema (SF Pro) con peso real, un acento azul vibrante, y aire
-/// generoso. Todos los tokens se adaptan a claro/oscuro.
+/// Visual language: modern native macOS (Sonoma / Raycast / Linear style) —
+/// rounded surfaces with depth from a soft shadow (no hard hairlines),
+/// system typography (SF Pro) at real weights, a vibrant blue accent, and
+/// generous breathing room. Every token adapts to light/dark.
 ///
-/// (El nombre `Carbon` se conserva por compatibilidad de API; el lenguaje ya no
-/// es el IBM Carbon plano original.)
+/// (The `Carbon` name is kept for API compatibility; the language is no longer
+/// the original flat IBM Carbon.)
 enum Carbon {
 
-    // MARK: Colores (dinámicos claro/oscuro)
+    // MARK: Colors (light/dark dynamic)
 
-    /// Fondo de la ventana (ligeramente teñido para que las tarjetas blancas floten).
+    /// Window background (slightly tinted so white cards float above it).
     static let canvas         = Color(light: 0xF2F3F5, dark: 0x1A1A1C)
-    /// Superficie de tarjeta / control (flota sobre el canvas).
+    /// Card / control surface (floats above the canvas).
     static let surface1       = Color(light: 0xFFFFFF, dark: 0x2A2A2D)
     static let surface2       = Color(light: 0xEDEEF1, dark: 0x37373B)
-    /// Separadores muy sutiles (casi imperceptibles, no líneas duras).
+    /// Very subtle separators (almost imperceptible, not hard lines).
     static let hairline       = Color(light: 0x000000, dark: 0xFFFFFF).opacity(0.07)
     static let hairlineStrong = Color(light: 0x000000, dark: 0xFFFFFF).opacity(0.14)
 
@@ -27,7 +27,7 @@ enum Carbon {
     static let inkMuted       = Color(light: 0x6E6E73, dark: 0xAEAEB2)
     static let inkSubtle      = Color(light: 0x8A8A8F, dark: 0x8A8A8F)
 
-    /// Acento principal (azul vivo del sistema).
+    /// Primary accent (the system's vivid blue).
     static let primary        = Color(light: 0x0A84FF, dark: 0x0A84FF)
     static let primaryDeep    = Color(light: 0x0060DF, dark: 0x0060DF)
     static let success        = Color(light: 0x1FA34B, dark: 0x30D158)
@@ -36,7 +36,7 @@ enum Carbon {
     static let onPrimary      = Color(hex: 0xFFFFFF)
     static let inverseCanvas  = Color(light: 0x1D1D1F, dark: 0xF5F5F7)
 
-    /// Degradado del botón/acento primario (sutil, da volumen sin estridencia).
+    /// Primary button/accent gradient (subtle, adds volume without shouting).
     static var primaryGradient: LinearGradient {
         LinearGradient(colors: [Color(hex: 0x2D95FF), Color(hex: 0x0A6CFF)],
                        startPoint: .top, endPoint: .bottom)
@@ -46,7 +46,7 @@ enum Carbon {
                        startPoint: .top, endPoint: .bottom)
     }
 
-    // MARK: Espaciado (rejilla de 4 px)
+    // MARK: Spacing (4 px grid)
 
     enum Space {
         static let xxs: CGFloat = 4
@@ -58,7 +58,7 @@ enum Carbon {
         static let xxl: CGFloat = 48
     }
 
-    // MARK: Radios de esquina
+    // MARK: Corner radii
 
     enum Radius {
         static let chip:   CGFloat = 8
@@ -67,7 +67,7 @@ enum Carbon {
         static let pill:   CGFloat = 999
     }
 
-    // MARK: Movimiento (respeta Reducir movimiento)
+    // MARK: Motion (respects Reduce Motion)
 
     enum Motion {
         static let fast     = Animation.easeOut(duration: 0.16)
@@ -78,21 +78,21 @@ enum Carbon {
     }
 }
 
-// MARK: - Sombras (elevación suave)
+// MARK: - Shadows (soft elevation)
 
 extension View {
-    /// Sombra de tarjeta flotante (suave, difusa, nunca dura).
+    /// Floating card shadow (soft, diffuse, never hard).
     func cardShadow(_ scheme: ColorScheme) -> some View {
         shadow(color: .black.opacity(scheme == .dark ? 0.45 : 0.10),
                radius: 14, x: 0, y: 6)
     }
-    /// Sombra coloreada para el CTA primario (le da presencia).
+    /// Colored shadow for the primary CTA (gives it presence).
     func glowShadow(_ color: Color, _ scheme: ColorScheme) -> some View {
         shadow(color: color.opacity(scheme == .dark ? 0.35 : 0.28), radius: 10, x: 0, y: 4)
     }
 }
 
-// MARK: - Tipografía (SF Pro del sistema)
+// MARK: - Typography (system SF Pro)
 
 enum CarbonText {
     case displayMd, headline, cardTitle, subhead, bodyLg, body, bodySm, bodyEmphasis, caption, button
@@ -125,7 +125,7 @@ enum CarbonText {
         }
     }
 
-    /// Tracking ligeramente negativo en títulos = look moderno y compacto.
+    /// Slightly negative tracking on titles = modern, compact look.
     var tracking: CGFloat {
         switch self {
         case .displayMd: return -0.4
@@ -150,7 +150,7 @@ extension View {
         self.font(style.font).tracking(style.tracking).lineSpacing(style.lineSpacing)
     }
 
-    /// Cursor de mano al pasar por encima (controles clicables en desktop).
+    /// Hand cursor on hover (for clickable desktop controls).
     func pointingCursor() -> some View {
         onHover { inside in
             if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
@@ -158,7 +158,7 @@ extension View {
     }
 }
 
-// MARK: - Color desde hex (estático y dinámico claro/oscuro)
+// MARK: - Color from hex (static and light/dark dynamic)
 
 extension Color {
     init(hex: UInt32) {
@@ -169,7 +169,7 @@ extension Color {
                   opacity: 1)
     }
 
-    /// Color que cambia con la apariencia del sistema (claro/oscuro).
+    /// Color that follows the system appearance (light/dark).
     init(light: UInt32, dark: UInt32) {
         self.init(nsColor: NSColor(name: nil) { appearance in
             let isDark = appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
@@ -187,7 +187,7 @@ extension NSColor {
     }
 }
 
-// MARK: - Botones (redondeados, con relieve y estados suaves)
+// MARK: - Buttons (rounded, raised, with soft states)
 
 struct CarbonButton: ButtonStyle {
     enum Kind { case primary, secondary, tertiary, ghost, danger }
@@ -265,7 +265,7 @@ private struct CarbonButtonBody<Label: View>: View {
     }
 }
 
-/// Sombra/elevación del botón según su tipo (solo los rellenos "flotan").
+/// Button shadow/elevation by kind (only filled buttons "float").
 private struct ButtonElevation: ViewModifier {
     let kind: CarbonButton.Kind
     let enabled: Bool
@@ -279,7 +279,7 @@ private struct ButtonElevation: ViewModifier {
     }
 }
 
-// MARK: - Campo de texto (redondeado, relleno suave, foco con anillo azul)
+// MARK: - Text field (rounded, soft fill, blue focus ring)
 
 struct CarbonTextField: View {
     let placeholder: LocalizedStringKey
@@ -306,7 +306,7 @@ struct CarbonTextField: View {
     }
 }
 
-// MARK: - Tarjeta (superficie redondeada con sombra suave, sin hairline duro)
+// MARK: - Card (rounded surface with a soft shadow, no hard hairline)
 
 private struct CarbonCard: ViewModifier {
     let surface: Color
@@ -327,7 +327,7 @@ private struct CarbonCard: ViewModifier {
 }
 
 extension View {
-    /// Contenedor de tarjeta: superficie redondeada con sombra suave.
+    /// Card container: rounded surface with a soft shadow.
     func carbonCard(surface: Color = Carbon.surface1,
                     padding: CGFloat = Carbon.Space.lg) -> some View {
         modifier(CarbonCard(surface: surface, padding: padding))

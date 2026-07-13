@@ -1,24 +1,27 @@
 import Foundation
 
-/// Punto de entrada del privileged helper (daemon root).
+/// Entry point of the privileged helper (root daemon).
 ///
-/// Levanta un `NSXPCListener` sobre el Mach service declarado en el plist launchd
-/// y atiende SOLO las llamadas del contrato `HelperProtocol`.
+/// Spins up an `NSXPCListener` on the Mach service declared in the launchd plist
+/// and serves ONLY the calls of the `HelperProtocol` contract.
 ///
-/// Fase 2 completará la validación de la firma del cliente (que el conectado sea
-/// la app firmada por el mismo Team ID) antes de aceptar la conexión.
+/// Phase 2 will complete the client signature validation (verifying that the
+/// peer is the app signed by the same Team ID) before accepting the connection.
 final class HelperListenerDelegate: NSObject, NSXPCListenerDelegate {
 
     private let service = HelperService()
 
     func listener(_ listener: NSXPCListener,
                   shouldAcceptNewConnection newConnection: NSXPCConnection) -> Bool {
-        // SEGURIDAD: solo acepta conexiones de NUESTRA app firmada por NUESTRO Team ID.
-        // La validación efectiva la hace el kernel/XPC cuando llega la primera llamada;
-        // si el peer no cumple el requisito, la conexión se invalida automáticamente.
+        // SECURITY: only accept connections from OUR app signed by OUR Team ID.
+        // The actual validation is done by the kernel/XPC when the first call arrives;
+        // if the peer doesn't meet the requirement, the connection is invalidated automatically.
         newConnection.setCodeSigningRequirement(HelperConstants.clientCodeSigningRequirement)
         newConnection.exportedInterface = NSXPCInterface(with: HelperProtocol.self)
         newConnection.exportedObject = service
+        // Reverse channel: the helper can call the app's progress object during the
+        // raw write (a long-running operation).
+        newConnection.remoteObjectInterface = NSXPCInterface(with: HelperProgressProtocol.self)
         newConnection.resume()
         return true
     }
@@ -29,5 +32,5 @@ let listener = NSXPCListener(machServiceName: HelperConstants.machServiceName)
 listener.delegate = delegate
 listener.resume()
 
-// El daemon vive hasta que launchd lo detiene.
+// The daemon lives until launchd stops it.
 RunLoop.main.run()

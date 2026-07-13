@@ -1,7 +1,7 @@
 import Foundation
 import ServiceManagement
 
-/// Errores del ciclo de vida del helper privilegiado.
+/// Lifecycle errors for the privileged helper.
 public enum HelperClientError: LocalizedError {
     case registrationFailed(String)
     case requiresApproval
@@ -25,20 +25,20 @@ public enum HelperClientError: LocalizedError {
     }
 }
 
-/// Cliente del privileged helper: lo registra con SMAppService y habla con él por
-/// XPC para la ÚNICA operación root (formatear). Valida por firma que el helper al
-/// que se conecta es el legítimo (anti-suplantación).
+/// Client for the privileged helper: registers it with SMAppService and talks to it
+/// over XPC for the ONLY root operation (formatting). Validates by signature that the
+/// helper it connects to is the legitimate one (anti-spoofing).
 public final class HelperClient {
 
     public init() {}
 
-    // MARK: - Registro (SMAppService)
+    // MARK: - Registration (SMAppService)
 
     public var status: SMAppService.Status {
         SMAppService.daemon(plistName: HelperConstants.plistName).status
     }
 
-    /// Registra el daemon si aún no lo está. Idempotente.
+    /// Registers the daemon if it isn't already. Idempotent.
     public func registerIfNeeded() throws {
         let service = SMAppService.daemon(plistName: HelperConstants.plistName)
         switch service.status {
@@ -50,9 +50,9 @@ public final class HelperClient {
             do {
                 try service.register()
             } catch {
-                // Registrar un daemon root casi siempre exige aprobación del usuario;
-                // macOS devuelve "Operation not permitted" hasta que se aprueba en
-                // Ajustes. Mostramos la guía amable, no el error crudo.
+                // Registering a root daemon almost always requires user approval;
+                // macOS returns "Operation not permitted" until it's approved in
+                // Settings. We show the friendly guidance, not the raw error.
                 if service.status == .requiresApproval {
                     throw HelperClientError.requiresApproval
                 }
@@ -70,17 +70,17 @@ public final class HelperClient {
 
     // MARK: - XPC
 
-    /// Ejecuta una llamada XPC con TODOS los caminos de resolución cubiertos
-    /// (reply, error de envío, interrupción, invalidación) → la continuación se
-    /// reanuda EXACTAMENTE una vez y la llamada nunca se cuelga a nivel XPC.
-    /// Usa una conexión dedicada por llamada (la operación root es de una sola vez).
+    /// Runs an XPC call with ALL resolution paths covered (reply, send error,
+    /// interruption, invalidation) → the continuation resumes EXACTLY once and the
+    /// call never hangs at the XPC level.
+    /// Uses a dedicated connection per call (the root operation is one-shot).
     private func withProxy<T>(_ body: @escaping (HelperProtocol, ResumeOnce, CheckedContinuation<T, Error>) -> Void) async throws -> T {
         try await withCheckedThrowingContinuation { (cont: CheckedContinuation<T, Error>) in
             let once = ResumeOnce()
             let conn = NSXPCConnection(machServiceName: HelperConstants.machServiceName,
                                        options: .privileged)
             conn.remoteObjectInterface = NSXPCInterface(with: HelperProtocol.self)
-            // Anti-suplantación: solo hablamos con el helper firmado por nuestro Team ID.
+            // Anti-spoofing: we only talk to the helper signed with our Team ID.
             conn.setCodeSigningRequirement(HelperConstants.helperCodeSigningRequirement)
             conn.invalidationHandler = { once.resume { cont.resume(throwing: HelperClientError.connectionFailed) } }
             conn.interruptionHandler = { once.resume { cont.resume(throwing: HelperClientError.interrupted) } }
@@ -97,19 +97,19 @@ public final class HelperClient {
         }
     }
 
-    /// Formatea el disco (operación root). Lanza si el helper rechaza o falla.
+    /// Formats the disk (root operation). Throws if the helper rejects or fails.
     public func eraseDisk(bsdName: String, label: String) async throws {
         try await withProxy { (proxy, once, cont: CheckedContinuation<Void, Error>) in
             proxy.eraseDisk(bsdName: bsdName, label: label) { ok, message in
                 once.resume {
                     if ok { cont.resume() }
-                    else { cont.resume(throwing: HelperClientError.remote(message ?? "Error desconocido al formatear.")) }
+                    else { cont.resume(throwing: HelperClientError.remote(message ?? "Unknown error while formatting.")) }
                 }
             }
         }
     }
 
-    /// Versión del helper instalado (sanity check de que app y helper concuerdan).
+    /// Version of the installed helper (sanity check that app and helper match).
     public func helperVersion() async throws -> String {
         try await withProxy { (proxy, once, cont: CheckedContinuation<String, Error>) in
             proxy.helperVersion { version in
@@ -117,11 +117,51 @@ public final class HelperClient {
             }
         }
     }
+
+    /// Writes a RAW isohybrid ISO to the disk (long root operation).
+    /// Reports progress over the reverse channel (`onProgress`, on a background thread).
+    /// Uses a dedicated connection that exports the progress receiver.
+    public func writeImage(isoPath: String, bsdName: String,
+                           onProgress: @escaping (Int64, Int64) -> Void) async throws {
+        let receiver = ProgressReceiver(onProgress)
+        try await withCheckedThrowingContinuation { (cont: CheckedContinuation<Void, Error>) in
+            let once = ResumeOnce()
+            let conn = NSXPCConnection(machServiceName: HelperConstants.machServiceName, options: .privileged)
+            conn.remoteObjectInterface = NSXPCInterface(with: HelperProtocol.self)
+            conn.setCodeSigningRequirement(HelperConstants.helperCodeSigningRequirement)
+            // Export the progress receiver so the helper can call us back.
+            conn.exportedInterface = NSXPCInterface(with: HelperProgressProtocol.self)
+            conn.exportedObject = receiver
+            conn.invalidationHandler = { once.resume { cont.resume(throwing: HelperClientError.connectionFailed) } }
+            conn.interruptionHandler = { once.resume { cont.resume(throwing: HelperClientError.interrupted) } }
+            conn.resume()
+
+            guard let proxy = conn.remoteObjectProxyWithErrorHandler({ error in
+                once.resume { cont.resume(throwing: HelperClientError.remote(error.localizedDescription)) }
+            }) as? HelperProtocol else {
+                once.resume { cont.resume(throwing: HelperClientError.connectionFailed) }
+                conn.invalidate()
+                return
+            }
+            proxy.writeImage(isoPath: isoPath, bsdName: bsdName) { ok, message in
+                once.resume {
+                    if ok { cont.resume() }
+                    else { cont.resume(throwing: HelperClientError.remote(message ?? "Unknown error while writing the image.")) }
+                }
+            }
+        }
+    }
 }
 
-/// Garantiza que una continuación XPC se reanuda EXACTAMENTE una vez, aunque el
-/// reply, el error y los handlers de conexión lleguen a competir (reanudar dos
-/// veces es un crash).
+/// Receiver for the helper's reverse progress channel (root → app).
+private final class ProgressReceiver: NSObject, HelperProgressProtocol {
+    private let onProgress: (Int64, Int64) -> Void
+    init(_ onProgress: @escaping (Int64, Int64) -> Void) { self.onProgress = onProgress }
+    func didWrite(bytes: Int64, of total: Int64) { onProgress(bytes, total) }
+}
+
+/// Guarantees that an XPC continuation resumes EXACTLY once, even if the reply, the
+/// error, and the connection handlers end up racing (resuming twice is a crash).
 private final class ResumeOnce {
     private let lock = NSLock()
     private var done = false

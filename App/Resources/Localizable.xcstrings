@@ -175,6 +175,12 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Menos de 8 GB: demasiado pequeño para Windows 11." } }
       }
     },
+    "disk.tooSmallForISO" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Too small: smaller than the ISO." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Demasiado pequeño: menor que el ISO." } }
+      }
+    },
     "duration.minutes %lld" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "%lld min" } },
@@ -203,6 +209,12 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Formatting took too long to respond." } },
         "es" : { "stringUnit" : { "state" : "translated", "value" : "El formateo tardó demasiado en responder." } }
+      }
+    },
+    "error.build.usbTooSmall %@ %@" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This USB (%1$@) is smaller than the ISO (%2$@). Use a USB of %2$@ or more." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Este USB (%1$@) es más pequeño que el ISO (%2$@). Usa un USB de %2$@ o más." } }
       }
     },
     "error.build.usbVolumeNotFound" : {
@@ -249,8 +261,8 @@
     },
     "error.helper.requiresApproval" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Authorize “WinUSB Mac” in System Settings → General → Login Items to allow formatting." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Autoriza «WinUSB Mac» en Ajustes del Sistema → General → Elementos de inicio para poder formatear." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Authorize “USB from Mac” in System Settings → General → Login Items to allow formatting." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Autoriza «USB from Mac» en Ajustes del Sistema → General → Elementos de inicio para poder formatear." } }
       }
     },
     "error.iso.attachFailed %@" : {
@@ -315,8 +327,8 @@
     },
     "iso.drop.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Drag your Windows ISO here" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Arrastra tu ISO de Windows aquí" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Drag your ISO here" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Arrastra tu ISO aquí" } }
       }
     },
     "iso.drop.subtitle" : {
@@ -357,8 +369,8 @@
     },
     "hash.subtitle" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Paste the SHA-256 shown on Microsoft's download page." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Pega el SHA-256 que muestra Microsoft en su página de descarga." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Paste the SHA-256 from the official download page (Microsoft, or the Linux distro)." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Pega el SHA-256 de la página de descarga oficial (Microsoft o la distro de Linux)." } }
       }
     },
     "hash.title" : {
@@ -383,6 +395,24 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Change ISO…" } },
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Cambiar ISO…" } }
+      }
+    },
+    "iso.type.windows" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Windows installer detected — files copied to FAT32." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Instalador de Windows detectado — se copia a FAT32." } }
+      }
+    },
+    "iso.type.linux" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Bootable Linux/other ISO — written whole to the USB." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "ISO de Linux/otro booteable — se escribe completa al USB." } }
+      }
+    },
+    "iso.type.unsupported" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This ISO isn't bootable in a supported way." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Este ISO no es booteable de forma compatible." } }
       }
     },
     "iso.installerDetected" : {
@@ -429,8 +459,8 @@
     },
     "iso.title" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select the Windows 11 ISO" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Selecciona el ISO de Windows 11" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select your ISO" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Selecciona tu ISO" } }
       }
     },
     "iso.wim.fits %@" : {
@@ -443,6 +473,24 @@
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "install.wim is %@ → it will be split for FAT32." } },
         "es" : { "stringUnit" : { "state" : "translated", "value" : "install.wim ocupa %@ → se dividirá para FAT32." } }
+      }
+    },
+    "phase.writingImage" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Write image" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Escribir imagen" } }
+      }
+    },
+    "build.detail.writingImage" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Writing the image to the USB…" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Escribiendo la imagen en el USB…" } }
+      }
+    },
+    "error.build.unsupportedISO" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This ISO is not bootable in a supported way, so a working USB can't be created from it." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Este ISO no es booteable de una forma compatible, así que no se puede crear un USB que funcione." } }
       }
     },
     "phase.cancelled" : {
@@ -549,8 +597,8 @@
     },
     "step.iso" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Windows ISO" } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "ISO de Windows" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "ISO" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "ISO" } }
       }
     },
     "step.usb" : {

@@ -1,25 +1,25 @@
-# XcodeGen project definition for WinUSB Mac.
+# XcodeGen project definition for USB from Mac.
 # Generate the Xcode project with:  xcodegen generate
 #
 # Three targets:
-#   - WinUSBMac        : SwiftUI app (NOT sandboxed, hardened runtime for distribution)
-#   - WinUSBMacHelper  : privileged daemon (root) — ONLY eraseDisk via XPC (SMAppService)
-#   - WinUSBMacTests   : unit tests (disk-filter safety + split-size logic)
+#   - UsbFromMac        : SwiftUI app (NOT sandboxed, hardened runtime for distribution)
+#   - UsbFromMacHelper  : privileged daemon (root) — ONLY eraseDisk via XPC (SMAppService)
+#   - UsbFromMacTests   : unit tests (disk-filter safety + split-size logic)
 #
 # MANUAL CONFIG (you): set DEVELOPMENT_TEAM below to your Apple Team ID for
 # distribution signing. For local build/test, ad-hoc signing ("-") is used.
 
-name: WinUSBMac
+name: UsbFromMac
 
 options:
-  bundleIdPrefix: com.omar.winusbmac
+  bundleIdPrefix: com.omarhernandez.usbfrommac
   deploymentTarget:
     macOS: "13.0"
   createIntermediateGroups: true
   groupSortPosition: top
   developmentLanguage: en
 
-# Idiomas soportados (String Catalog en App/Resources/Localizable.xcstrings).
+# Supported languages (String Catalog in App/Resources/Localizable.xcstrings).
 knownRegions:
   - en
   - es
@@ -34,39 +34,39 @@ settings:
     # set DEVELOPMENT_TEAM, and enable ENABLE_HARDENED_RUNTIME.
     CODE_SIGN_STYLE: Manual
     CODE_SIGN_IDENTITY: "-"
-    DEVELOPMENT_TEAM: ""            # <-- rellena tu Apple Team ID para distribución
+    DEVELOPMENT_TEAM: ""            # <-- fill in your Apple Team ID for distribution
 
 targets:
 
-  WinUSBMac:
+  UsbFromMac:
     type: application
     platform: macOS
     sources:
       - path: App
         excludes:
           - "Resources/**"
-      # wimlib-imagex (Mach-O sin extensión) + sus dylibs van a Contents/Resources
-      # como fase de recursos explícita (XcodeGen no los clasifica solo).
+      # wimlib-imagex (Mach-O with no extension) + its dylibs go to Contents/Resources
+      # as an explicit resources phase (XcodeGen doesn't classify them on its own).
       - path: App/Resources
         buildPhase: resources
         optional: true
       - path: Shared
-      # El launchd plist del daemon se embebe en Contents/Library/LaunchDaemons
-      # (lo que espera SMAppService.daemon(plistName:)).
-      - path: Helper/com.omar.winusbmac.helper.plist
+      # The daemon's launchd plist is embedded in Contents/Library/LaunchDaemons
+      # (what SMAppService.daemon(plistName:) expects).
+      - path: Helper/com.omarhernandez.usbfrommac.helper.plist
         buildPhase:
           copyFiles:
             destination: wrapper
             subpath: Contents/Library/LaunchDaemons
     dependencies:
-      # El ejecutable del helper se copia (y firma) en Contents/MacOS.
-      - target: WinUSBMacHelper
+      # The helper executable is copied (and signed) into Contents/MacOS.
+      - target: UsbFromMacHelper
         embed: true
         copy:
           destination: executables
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.omar.winusbmac
+        PRODUCT_BUNDLE_IDENTIFIER: com.omarhernandez.usbfrommac
         INFOPLIST_FILE: App/Info.plist
         CODE_SIGN_ENTITLEMENTS: App/App.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
@@ -75,45 +75,45 @@ targets:
           - "$(inherited)"
           - "@executable_path/../Frameworks"
 
-  WinUSBMacHelper:
+  UsbFromMacHelper:
     type: tool
     platform: macOS
     sources:
       - path: Helper
         excludes:
-          - "com.omar.winusbmac.helper.plist"   # se embebe desde el target app
+          - "com.omarhernandez.usbfrommac.helper.plist"   # embedded from the app target
       - path: Shared
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.omar.winusbmac.helper
+        PRODUCT_BUNDLE_IDENTIFIER: com.omarhernandez.usbfrommac.helper
         CODE_SIGN_ENTITLEMENTS: Helper/Helper.entitlements
         # SMAppService daemon embedding (copy executable to Contents/MacOS and the
         # launchd plist to Contents/Library/LaunchDaemons) is wired in Phase 2,
         # where your real Developer ID signing is also required.
 
-  WinUSBMacTests:
+  UsbFromMacTests:
     type: bundle.unit-test
     platform: macOS
     sources:
       - path: Tests
     dependencies:
-      - target: WinUSBMac
+      - target: UsbFromMac
     settings:
       base:
         GENERATE_INFOPLIST_FILE: YES
         BUNDLE_LOADER: "$(TEST_HOST)"
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/WinUSBMac.app/Contents/MacOS/WinUSBMac"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/UsbFromMac.app/Contents/MacOS/UsbFromMac"
 
 schemes:
-  WinUSBMac:
+  UsbFromMac:
     build:
       targets:
-        WinUSBMac: all
-        WinUSBMacHelper: all
-        WinUSBMacTests: [test]
+        UsbFromMac: all
+        UsbFromMacHelper: all
+        UsbFromMacTests: [test]
     run:
       config: Debug
     test:
       config: Debug
       targets:
-        - WinUSBMacTests
+        - UsbFromMacTests

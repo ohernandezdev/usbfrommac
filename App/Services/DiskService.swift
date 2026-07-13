@@ -1,35 +1,35 @@
 import Foundation
 import Combine
 
-/// Servicio observable que la UI consume: publica la lista de USB elegibles y la
-/// mantiene al día en vivo (RF-1). Compone una fuente (`DiskEnumerating`) con el
-/// `DiskFilter`. Toda la lógica de exclusión vive en el filtro, ya cubierto por
-/// tests; este servicio solo orquesta.
+/// Observable service consumed by the UI: it publishes the list of eligible USB
+/// drives and keeps it up to date live (RF-1). It composes a source
+/// (`DiskEnumerating`) with the `DiskFilter`. All exclusion logic lives in the
+/// filter, already covered by tests; this service only orchestrates.
 ///
-/// Contrato de hilo: la fuente garantiza entregar `onChange` en el hilo principal,
-/// por lo que `disks` se muta siempre en main (seguro para SwiftUI). Por eso el
-/// tipo NO es `@MainActor`: evita fricción de aislamiento con el callback síncrono.
+/// Threading contract: the source guarantees delivering `onChange` on the main
+/// thread, so `disks` is always mutated on main (safe for SwiftUI). That is why
+/// the type is NOT `@MainActor`: it avoids isolation friction with the synchronous callback.
 public final class DiskService: ObservableObject {
 
-    /// USB elegibles, listos para mostrar. Nunca contiene el disco interno/arranque.
+    /// Eligible USB drives, ready to display. Never contains the internal/boot disk.
     @Published public private(set) var disks: [Disk] = []
 
     private let source: DiskEnumerating
     private let filter: DiskFilter
 
     /// - Parameters:
-    ///   - source: por defecto DiskArbitration; en tests se inyecta un fake.
-    ///   - bootDiskBSDName: disco de arranque a excluir; por defecto el real del sistema.
+    ///   - source: defaults to DiskArbitration; tests inject a fake.
+    ///   - bootDiskBSDName: boot disk to exclude; defaults to the system's real one.
     public init(source: DiskEnumerating = DiskArbitrationSource(),
                 bootDiskBSDName: String? = SystemBootDisk.bsdName()) {
         self.source = source
         self.filter = DiskFilter(bootDiskBSDName: bootDiskBSDName)
     }
 
-    /// Empieza a observar discos. La fuente entrega el estado actual de inmediato.
+    /// Starts observing disks. The source delivers the current state immediately.
     public func start() {
         source.onChange = { [weak self] candidates in
-            // `onChange` ya llega en el hilo principal (garantía de la fuente).
+            // `onChange` already arrives on the main thread (guaranteed by the source).
             self?.apply(candidates)
         }
         source.start()
@@ -40,13 +40,13 @@ public final class DiskService: ObservableObject {
         source.onChange = nil
     }
 
-    /// Snapshot síncrono filtrado (útil para revalidar antes de acciones).
+    /// Filtered synchronous snapshot (useful for revalidating before actions).
     public func refreshNow() {
         apply(source.currentCandidates())
     }
 
-    /// Snapshot filtrado SIN publicar (seguro desde un hilo de fondo). Se usa para
-    /// la re-validación JIT del disco justo antes de formatear (S-3).
+    /// Filtered snapshot WITHOUT publishing (safe from a background thread). Used
+    /// for the JIT re-validation of the disk right before formatting (S-3).
     public func snapshot() -> [Disk] {
         filter.eligibleDisks(from: source.currentCandidates())
     }

@@ -1,105 +1,136 @@
-# Dogfooding — hallazgos y fixes (sesión inicial)
+# Dogfooding — findings and fixes
 
-Notas de la primera prueba en hardware real de **WinUSB Mac**, creando un USB
-booteable de Windows 11 (ISO `Win11_25H2_Spanish_x64_v2.iso`) sobre un pendrive
-Lexar de 62 GB.
+## Windows flow (validated on real hardware)
 
-**Entorno:** macOS 15.7.7 (Sequoia) · Apple Silicon · firma **Developer ID
-Application** (Team `C34D3V8484`). La prueba se hizo con `scripts/dogfood.sh`
-(build firmado local, sin notarizar — válido solo en esta máquina).
+Notes from the first real-hardware test of **USB from Mac**, creating a bootable
+Windows 11 USB (ISO `Win11_25H2_Spanish_x64_v2.iso`) on a 62 GB Lexar stick.
 
-La app terminó creando el USB **de principio a fin sin intervención**
-(Formatear → Copiar → Dividir → Finalizar → expulsar). El dogfooding sacó 5 bugs
-reales que solo aparecen ejecutando contra un USB físico.
+**Environment:** macOS 15.7.7 (Sequoia) · Apple Silicon · **Developer ID
+Application** signing (Team `C34D3V8484`). The test used `scripts/dogfood.sh`
+(local signed build, un-notarized — valid only on this machine).
+
+The app ended up creating the USB **end to end with no intervention**
+(Format → Copy → Split → Finish → eject), and a real Windows install was
+completed from it. Dogfooding surfaced 5 real bugs that only appear when running
+against a physical USB.
 
 ---
 
-## Bugs encontrados y resueltos
+### Bugs found and fixed
 
-### 1. La app se colgaba en "Formatear" (reply XPC perdido)
-- **Síntoma:** la barra se quedaba en "Formateando…" para siempre, aunque el
-  disco SÍ quedaba formateado (`diskutil list` mostraba el volumen `WIN11`).
-- **Causa raíz:** el helper root es un daemon *on-demand*; tras ejecutar
-  `diskutil eraseDisk` y responder, launchd lo apaga al quedar idle, y el reply
-  del XPC se pierde por timing. La app esperaba ese reply con un
-  `DispatchSemaphore` **sin timeout** → cuelgue permanente.
-- **Fix (defensa en profundidad):**
-  - `BuildCoordinator.formatAndAwaitVolume`: **verificación por efecto** — avanza
-    en cuanto aparece `/Volumes/<label>` (~0,4 s), sin depender del reply. Para
-    una operación destructiva, confirmar el estado real del disco es el criterio
-    de éxito correcto (no es un *fallback* que oculta el problema).
-  - Timeout de 180 s como backstop (`BuildError.eraseTimedOut`).
-  - `HelperClient`: la conexión XPC resuelve por **todos** los caminos (reply,
-    error de envío, interrupción, invalidación) → nunca se cuelga a nivel XPC.
-  - Política documentada y testeada en `EraseDecision` (`Tests/BuildFlowTests`).
+#### 1. The app hung at "Format" (lost XPC reply)
+- **Symptom:** the bar stayed at "Formatting…" forever, even though the disk
+  *was* formatted (`diskutil list` showed the `WIN11` volume).
+- **Root cause:** the root helper is an *on-demand* daemon; after running
+  `diskutil eraseDisk` and replying, launchd shuts it down once idle and the XPC
+  reply is lost to timing. The app waited for that reply with a timeout-less
+  `DispatchSemaphore` → permanent hang.
+- **Fix (defense in depth):**
+  - `BuildCoordinator.formatAndAwaitVolume`: **verification by effect** — it
+    advances as soon as `/Volumes/<label>` appears (~0.4 s), without depending on
+    the reply. For a destructive operation, confirming the disk's real state is
+    the correct success criterion (this is not a *fallback* that hides the bug).
+  - 180 s timeout as a backstop (`BuildError.eraseTimedOut`).
+  - `HelperClient`: the XPC connection resolves through **every** path (reply,
+    send error, interruption, invalidation) → it never hangs at the XPC level.
+  - Policy documented and tested in `EraseDecision` (`Tests/BuildFlowTests`).
 
-### 2. "Couldn't communicate with a helper application"
-- **Síntoma:** tras aprobar el daemon, la conexión XPC se invalidaba al instante.
-- **Causa raíz:** un target *tool* sin `Info.plist` se firma con el **nombre del
-  ejecutable** como identifier (`WinUSBMacHelper`), pero el requisito de firma
-  cruzada exigía `identifier "com.omar.winusbmac.helper"`. No coincidían.
-  Verificado con `codesign -dvvv`.
-- **Fix:** `scripts/dogfood.sh` re-firma el helper con
-  `--identifier com.omar.winusbmac.helper`.
-- **Nota:** al re-firmar, hay que **matar el daemon viejo** (`sudo killall
-  WinUSBMacHelper`) o launchd sigue ejecutando el binario anterior en memoria.
+#### 2. "Couldn't communicate with a helper application"
+- **Symptom:** after approving the daemon, the XPC connection invalidated instantly.
+- **Root cause:** a *tool* target with no `Info.plist` is signed with the
+  **executable name** as its identifier (`UsbFromMacHelper`), but the cross-signing
+  requirement demanded `identifier "com.omarhernandez.usbfrommac.helper"`. They
+  didn't match. Verified with `codesign -dvvv`.
+- **Fix:** `scripts/dogfood.sh` re-signs the helper with
+  `--identifier com.omarhernandez.usbfrommac.helper`.
+- **Note:** when re-signing you must **kill the old daemon** (`sudo killall
+  UsbFromMacHelper`) or launchd keeps running the previous binary in memory.
 
-### 3. Mensaje de error crudo en el primer arranque
-- **Síntoma:** "No se pudo registrar el componente con privilegios: Operation
-  not permitted" — asusta, pero es el flujo NORMAL de aprobación.
-- **Fix:** `HelperClient.registerIfNeeded` detecta el estado `.requiresApproval`
-  y muestra la guía amable ("Autoriza en Ajustes → Elementos de inicio").
+#### 3. Raw error message on first launch
+- **Symptom:** "Couldn't register the privileged component: Operation not
+  permitted" — scary, but it is the NORMAL approval flow.
+- **Fix:** `HelperClient.registerIfNeeded` detects the `.requiresApproval` state
+  and shows friendly guidance ("Approve it in Settings → Login Items").
 
-### 4. Imágenes de disco aparecían como "USBs"
-- **Síntoma:** simuladores de iOS, cryptexes, `.dmg` montados se ofrecían como
-  destino (son `external` + `removable` pero `Protocol: Disk Image`, `Virtual`).
-- **Fix:** `DiskFilter` excluye candidatos con `busProtocol == "Disk Image"`.
+#### 4. Disk images showed up as "USBs"
+- **Symptom:** iOS simulators, cryptexes and mounted `.dmg`s were offered as a
+  target (they are `external` + `removable` but `Protocol: Disk Image`, `Virtual`).
+- **Fix:** `DiskFilter` excludes candidates with `busProtocol == "Disk Image"`.
   Test: `DiskFilterTests.testMountedDiskImageIsExcluded`.
 
-### 6. El volumen formateado quedaba SIN montar (causa raíz más profunda)
-- **Síntoma:** con el build "anti-cuelgue", la app daba "El formateo tardó
-  demasiado en responder" (timeout) aunque `diskutil list` mostraba el disco ya
-  formateado como `WIN11` FAT32. `diskutil info diskNs2` → `Mounted: No`.
-- **Causa raíz:** un **daemon root no hereda la sesión de auto-montaje de
-  DiskArbitration del usuario**. Por eso `diskutil eraseDisk` ejecutado por el
-  helper crea el volumen pero **no lo monta** en `/Volumes/<label>`. La
-  verificación por efecto sondeaba `/Volumes/<label>`, que nunca aparecía → timeout.
-- **Fix:** `BuildCoordinator.formatAndAwaitVolume` detecta la partición de datos
-  (`diskNs2`) ya formateada como FAT32 con la etiqueta (`isFormatted`, vía
-  `diskutil info -plist`) y la **monta explícitamente** (`diskutil mount diskNs2`)
-  antes de continuar. Independiente del reply XPC y del auto-montaje.
-- **Lección:** tras una operación de disco en un daemon root, NO asumas
-  auto-montaje; monta tú el resultado.
+#### 6. The formatted volume was left UNMOUNTED (deeper root cause)
+- **Symptom:** with the "anti-hang" build, the app reported "Formatting took too
+  long to respond" (timeout) even though `diskutil list` showed the disk already
+  formatted as `WIN11` FAT32. `diskutil info diskNs2` → `Mounted: No`.
+- **Root cause:** a **root daemon doesn't inherit the user's DiskArbitration
+  auto-mount session**. So `diskutil eraseDisk` run by the helper creates the
+  volume but **doesn't mount it** at `/Volumes/<label>`. Verification by effect
+  was polling `/Volumes/<label>`, which never appeared → timeout.
+- **Fix:** `BuildCoordinator.formatAndAwaitVolume` detects the data partition
+  (`diskNs2`) already formatted as FAT32 with the label (`isFormatted`, via
+  `diskutil info -plist`) and **mounts it explicitly** (`diskutil mount diskNs2`)
+  before continuing. Independent of the XPC reply and of auto-mount.
+- **Lesson:** after a disk operation in a root daemon, do NOT assume auto-mount;
+  mount the result yourself.
 
-### 5. Volumen viejo con la misma etiqueta
-- **Riesgo:** si ya había un `/Volumes/<label>` montado, la verificación por
-  efecto podía confundirlo con el recién formateado.
-- **Fix:** `BuildCoordinator` desmonta cualquier `/Volumes/<label>` previo antes
-  de formatear.
+#### 5. Stale volume with the same label
+- **Risk:** if a `/Volumes/<label>` was already mounted, verification by effect
+  could mistake it for the freshly formatted one.
+- **Fix:** `BuildCoordinator` unmounts any prior `/Volumes/<label>` before formatting.
 
 ---
 
-## Cómo se hizo el USB la primera vez (flujo manual de referencia)
+### How the USB was made the first time (manual reference flow)
 
-Cuando la app aún se colgaba, el formateo (único paso root) ya había ocurrido, y
-el resto (usuario) se completó a mano — exactamente el método que la app replica:
+While the app still hung, the format (the only root step) had already happened,
+and the rest (user-level) was completed by hand — exactly the method the app
+replicates:
 
 ```bash
-SRC=/Volumes/CCCOMA_X64FRE_ES-ES_DV9   # ISO montado
-DST=/Volumes/WIN11                     # USB formateado FAT32/GPT
+SRC=/Volumes/CCCOMA_X64FRE_ES-ES_DV9   # mounted ISO
+DST=/Volumes/WIN11                     # USB formatted FAT32/GPT
 rsync -rt --exclude='sources/install.wim' "$SRC/" "$DST/"
 /opt/homebrew/bin/wimlib-imagex split "$SRC/sources/install.wim" "$DST/sources/install.swm" 3800
 diskutil eject /dev/disk11
 ```
 
-`install.wim` (7,0 GB) se dividió en `install.swm` (3,2) + `install2.swm` (3,7) +
-`install3.swm` (93 MB) — Windows Setup los reensambla solo.
+`install.wim` (7.0 GB) was split into `install.swm` (3.2) + `install2.swm` (3.7) +
+`install3.swm` (93 MB) — Windows Setup reassembles them by itself.
 
 ---
 
-## Pendiente (opcional, no bloquea el uso)
+## Linux raw flow (pending hardware dogfooding — A1)
 
-- **Notarización** para distribuir a otros Macs: `scripts/build-notarize.sh`.
-  Sin notarizar, el build solo es válido en esta máquina (sin cuarentena).
-- **LICENSE GPLv3** (texto canónico de gnu.org) — wimlib es GPLv3 y la app es
-  open source.
+The Linux path writes the ISO **raw** (`dd`-style) to `/dev/rdiskN` from the root
+helper. The detector is validated against a real `ubuntu-26.04-desktop-amd64.iso`
+(classified `hybridRaw`), and the full pipeline compiles with green tests — but
+the raw write has **never run on real hardware yet**. Until a real machine has
+booted from a stick this app produced, the Linux flow is not "validated".
+
+What to do:
+
+1. **Re-approve the helper for the current bundle id.** The helper is registered
+   with `SMAppService` under `com.omarhernandez.usbfrommac.helper`; to the system
+   this is a *new* service, so the previous approval doesn't carry over. After
+   `scripts/dogfood.sh`:
+   ```bash
+   sudo killall UsbFromMacHelper        # drop any old daemon from memory
+   ```
+   then approve it in **System Settings → General → Login Items** when the app
+   asks on first run.
+2. **Create a real Ubuntu USB** with the app (pick the Ubuntu ISO → the picker
+   should show "Linux ISO", no FAT32 label field, the raw "Write image" phase
+   with live bytes/%).
+3. **Boot a real machine** from that stick and confirm it reaches the installer.
+4. Watch for hardware-only bugs (the Windows flow surfaced 6). Likely suspects:
+   last-block alignment/padding, `F_FULLFSYNC` timing, and eject behavior.
+
+Conservative rule: if the detector is unsure about an ISO, do NOT offer the raw
+write — better to reject than to hand the user a stick that won't boot.
+
+---
+
+## Pending (optional, doesn't block use)
+
+- **Notarization** to distribute to other Macs: `scripts/build-notarize.sh`.
+  Un-notarized, the build is only valid on this machine (no quarantine).

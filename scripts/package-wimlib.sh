@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 #
-# package-wimlib.sh — empaqueta wimlib-imagex + sus dylibs dentro de App/Resources
-# y los hace autocontenidos (@executable_path) para que la app sea distribuible.
+# package-wimlib.sh — packages wimlib-imagex + its dylibs inside App/Resources
+# and makes them self-contained (@executable_path) so the app is distributable.
 #
-# wimlib es GPLv3. WinUSB Mac es open source (GPLv3), así que empaquetar el binario
-# y ejecutarlo como subproceso es perfectamente compatible.
+# wimlib is GPLv3. USB from Mac is open source (GPLv3), so packaging the binary
+# and running it as a subprocess is perfectly compatible.
 #
-# Uso:
+# Usage:
 #   scripts/package-wimlib.sh [BREW_PREFIX] [SIGN_IDENTITY]
 #
-#   BREW_PREFIX    Prefijo de Homebrew. Por defecto /opt/homebrew (Apple Silicon).
-#                  En Intel suele ser /usr/local.
-#   SIGN_IDENTITY  Identidad de firma. Por defecto "-" (ad-hoc, solo para desarrollo).
-#                  Para distribución: "Developer ID Application: TU NOMBRE (TEAMID)".
+#   BREW_PREFIX    Homebrew prefix. Defaults to /opt/homebrew (Apple Silicon).
+#                  On Intel it's usually /usr/local.
+#   SIGN_IDENTITY  Signing identity. Defaults to "-" (ad-hoc, development only).
+#                  For distribution: "Developer ID Application: YOUR NAME (TEAMID)".
 #
-# Requisito previo:  brew install wimlib
+# Prerequisite:  brew install wimlib
 #
 set -eo pipefail
 
@@ -26,28 +26,28 @@ RES_DIR="$ROOT/App/Resources"
 BIN_SRC="$BREW_PREFIX/bin/wimlib-imagex"
 
 if [ ! -e "$BIN_SRC" ]; then
-  echo "✖ No se encontró $BIN_SRC"
-  echo "  Instala wimlib primero:  brew install wimlib"
+  echo "✖ $BIN_SRC not found"
+  echo "  Install wimlib first:  brew install wimlib"
   exit 1
 fi
 
 mkdir -p "$RES_DIR"
-echo "▸ Copiando wimlib-imagex a App/Resources…"
-cp -L "$BIN_SRC" "$RES_DIR/wimlib-imagex"     # -L sigue el symlink al binario real
+echo "▸ Copying wimlib-imagex to App/Resources…"
+cp -L "$BIN_SRC" "$RES_DIR/wimlib-imagex"     # -L follows the symlink to the real binary
 chmod u+w "$RES_DIR/wimlib-imagex"
 
-# Reescribe recursivamente las dylibs no-system a @executable_path y las copia.
-# (Compatible con bash 3.2 de macOS: sin arrays asociativos.)
-seen=" "                              # basenames ya procesados, rodeados de espacios
+# Recursively rewrites the non-system dylibs to @executable_path and copies them.
+# (Compatible with macOS bash 3.2: no associative arrays.)
+seen=" "                              # already-processed basenames, surrounded by spaces
 queue=("$RES_DIR/wimlib-imagex")
 qi=0
 
 deps_of() {
-  # Lista dependencias dinámicas bajo el prefijo de Homebrew o /usr/local (no /usr/lib ni /System).
+  # Lists dynamic dependencies under the Homebrew prefix or /usr/local (not /usr/lib or /System).
   otool -L "$1" | awk 'NR>1 {print $1}' | grep -E "^($BREW_PREFIX|/usr/local)/" || true
 }
 
-echo "▸ Empaquetando dylibs dependientes…"
+echo "▸ Packaging dependent dylibs…"
 while [ "$qi" -lt "${#queue[@]}" ]; do
   current="${queue[$qi]}"
   qi=$((qi + 1))
@@ -55,7 +55,7 @@ while [ "$qi" -lt "${#queue[@]}" ]; do
     [ -z "$dep" ] && continue
     base="$(basename "$dep")"
     case "$seen" in
-      *" $base "*) : ;;               # ya copiado
+      *" $base "*) : ;;               # already copied
       *)
         cp -f "$dep" "$RES_DIR/$base"
         chmod u+w "$RES_DIR/$base"
@@ -69,13 +69,13 @@ while [ "$qi" -lt "${#queue[@]}" ]; do
   done < <(deps_of "$current")
 done
 
-# Firma (dylibs primero, luego el binario) con hardened runtime.
-echo "▸ Firmando (identidad: $IDENTITY)…"
+# Sign (dylibs first, then the binary) with hardened runtime.
+echo "▸ Signing (identity: $IDENTITY)…"
 shopt -s nullglob
 for dylib in "$RES_DIR"/*.dylib; do
   codesign --force --timestamp --options runtime --sign "$IDENTITY" "$dylib"
 done
 codesign --force --timestamp --options runtime --sign "$IDENTITY" "$RES_DIR/wimlib-imagex"
 
-echo "✓ wimlib empaquetado en App/Resources."
-echo "  Recuerda regenerar el proyecto:  xcodegen generate"
+echo "✓ wimlib packaged in App/Resources."
+echo "  Remember to regenerate the project:  xcodegen generate"

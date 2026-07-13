@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Host del wizard de 4 pasos, con chrome Carbon (canvas, charcoal, plano) y
-/// soporte de claro/oscuro, transiciones direccionales y barra de pasos navegable.
+/// Host for the 4-step wizard, with Carbon chrome (canvas, charcoal, flat) and
+/// light/dark support, directional transitions and a navigable step bar.
 struct ContentView: View {
     @StateObject private var coordinator = BuildCoordinator()
     @ObservedObject private var localization = LocalizationStore.shared
@@ -43,18 +43,18 @@ struct ContentView: View {
         .foregroundStyle(Carbon.ink)
         .tint(Carbon.primary)
         .environment(\.locale, localization.locale)
-        .id(localization.language)   // fuerza el re-render de toda la UI al cambiar idioma
+        .id(localization.language)   // forces the whole UI to re-render when the language changes
         .animation(Carbon.Motion.resolve(Carbon.Motion.standard, reduce: reduceMotion),
                    value: coordinator.step)
         .onChange(of: coordinator.step) { _ in updateDirection() }
     }
 
-    /// Navega a un paso ya visitado al tocar la barra de pasos.
+    /// Navigates to an already-visited step when the step bar is tapped.
     private func navigate(to step: BuildCoordinator.Step) {
         coordinator.goTo(step: step)
     }
 
-    /// Determina la dirección de la transición (avanzar = entra por la derecha).
+    /// Determines the transition direction (moving forward = enters from the right).
     private func updateDirection() {
         let newIndex = stepIndex(coordinator.step)
         direction = newIndex >= lastIndex ? .trailing : .leading
@@ -66,8 +66,8 @@ struct ContentView: View {
     }
 }
 
-/// Indicador de pasos Carbon: cuadrados (0px) unidos por hairlines. Los pasos ya
-/// visitados son clicables para volver (si no hay un build en curso).
+/// Carbon step indicator: squares (0px) joined by hairlines. Already-visited
+/// steps are clickable to go back (when no build is in progress).
 private struct CarbonStepBar: View {
     let step: BuildCoordinator.Step
     let isBuilding: Bool
@@ -134,7 +134,7 @@ private struct CarbonStepBar: View {
     }
 }
 
-/// Selector de idioma de la interfaz (Sistema / English / Español), en vivo.
+/// Interface language selector (System / English / Español), live.
 private struct LanguageMenu: View {
     @ObservedObject var localization: LocalizationStore
 

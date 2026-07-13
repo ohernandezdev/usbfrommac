@@ -1,5 +1,5 @@
 import XCTest
-@testable import WinUSBMac
+@testable import UsbFromMac
 
 final class CopyServiceTests: XCTestCase {
 
@@ -36,7 +36,7 @@ final class CopyServiceTests: XCTestCase {
     private func makeSourceTree() throws -> URL {
         let src = makeTempDir()
         try write(src, "setup.exe", "SETUP")                 // 5 bytes
-        try write(src, "sources/install.wim", "THIS_IS_BIG") // 11 bytes — EXCLUIDO
+        try write(src, "sources/install.wim", "THIS_IS_BIG") // 11 bytes — EXCLUDED
         try write(src, "sources/boot.wim", "BOOT")           // 4 bytes
         try write(src, "efi/boot/bootx64.efi", "EFI")        // 3 bytes
         return src
@@ -51,7 +51,7 @@ final class CopyServiceTests: XCTestCase {
         XCTAssertEqual(read(dst, "setup.exe"), "SETUP")
         XCTAssertEqual(read(dst, "sources/boot.wim"), "BOOT")
         XCTAssertEqual(read(dst, "efi/boot/bootx64.efi"), "EFI")
-        // El archivo grande NUNCA se copia (RF-7).
+        // The large file is NEVER copied (RF-7).
         XCTAssertFalse(exists(dst, "sources/install.wim"))
     }
 
@@ -62,7 +62,7 @@ final class CopyServiceTests: XCTestCase {
         var last: CopyProgress?
         try CopyService().copy(from: src, to: dst, progress: { last = $0 })
 
-        // 5 + 4 + 3 = 12 bytes (install.wim de 11 bytes NO cuenta).
+        // 5 + 4 + 3 = 12 bytes (the 11-byte install.wim does NOT count).
         XCTAssertEqual(last?.totalBytes, 12)
         XCTAssertEqual(last?.bytesCopied, 12)
         XCTAssertEqual(last?.fraction, 1.0)
@@ -72,7 +72,7 @@ final class CopyServiceTests: XCTestCase {
         let src = try makeSourceTree()
         let dst = makeTempDir()
 
-        // Excluir también boot.wim.
+        // Also exclude boot.wim.
         try CopyService().copy(from: src, to: dst,
                                excluding: ["sources/install.wim", "sources/boot.wim"])
 

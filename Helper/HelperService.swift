@@ -1,10 +1,10 @@
 import Foundation
 
-/// Implementación del contrato XPC en el lado root.
+/// Root-side implementation of the XPC contract.
 ///
-/// Es deliberadamente AUTOCONTENIDO (no comparte código con la app salvo el
-/// protocolo): minimiza la superficie de ataque del componente privilegiado y
-/// garantiza que la revalidación de seguridad no depende de la lógica de la app.
+/// It is deliberately SELF-CONTAINED (it shares no code with the app other than
+/// the protocol): this minimizes the attack surface of the privileged component
+/// and guarantees that the security revalidation doesn't depend on the app's logic.
 final class HelperService: NSObject, HelperProtocol {
 
     private let diskutil = "/usr/sbin/diskutil"
@@ -17,35 +17,128 @@ final class HelperService: NSObject, HelperProtocol {
                    label: String,
                    reply: @escaping (Bool, String?) -> Void) {
 
-        // 1. El identificador debe ser un disco COMPLETO: "diskN", sin sufijos de
-        //    partición ni rutas. Bloquea inyección y formateo de particiones sueltas.
+        // 1. The identifier must be a WHOLE disk: "diskN", with no partition
+        //    suffixes or paths. Blocks injection and formatting of stray partitions.
         guard Self.isValidWholeDiskBSD(bsdName) else {
-            return reply(false, "Identificador de disco no válido: \(bsdName)")
+            return reply(false, "Invalid disk identifier: \(bsdName)")
         }
 
-        // 2. Etiqueta FAT32 saneada (≤ 11, charset seguro).
+        // 2. Sanitized FAT32 label (≤ 11, safe charset).
         guard let safeLabel = Self.sanitizedFAT32Label(label) else {
-            return reply(false, "Etiqueta FAT32 no válida (máx. 11 caracteres permitidos).")
+            return reply(false, "Invalid FAT32 label (max. 11 characters allowed).")
         }
 
-        // 3. No puede ser el disco de arranque (revalidado aquí, no se confía en la app).
+        // 3. It must not be the boot disk (revalidated here; the app is not trusted).
         if let boot = Self.bootDiskBSDName(), boot == bsdName {
-            return reply(false, "Operación rechazada: el target es el disco de arranque del sistema.")
+            return reply(false, "Operation rejected: the target is the system boot disk.")
         }
 
-        // 4. REVALIDACIÓN INDEPENDIENTE (S-4): el helper consulta diskutil y exige
-        //    que el target sea whole + NO interno + extraíble. Si algo no encaja,
-        //    aborta sin tocar nada.
+        // 4. INDEPENDENT REVALIDATION (S-4): the helper queries diskutil and requires
+        //    the target to be whole + NOT internal + removable. If anything doesn't
+        //    add up, it aborts without touching anything.
         if case .failure(let message) = Self.validateRemovableExternal(bsdName, diskutil: diskutil) {
             return reply(false, message)
         }
 
-        // 5. Solo aquí, con todo validado, se formatea.
+        // 5. Only here, with everything validated, does it format.
         let result = Self.runDiskutilErase(bsdName: bsdName, label: safeLabel, diskutil: diskutil)
         reply(result.ok, result.message)
     }
 
-    // MARK: - Validación
+    // MARK: - Raw write (isohybrid / Linux ISOs)
+
+    func writeImage(isoPath: String,
+                    bsdName: String,
+                    reply: @escaping (Bool, String?) -> Void) {
+
+        // Same safeguards as formatting: the raw write is just as destructive.
+        guard Self.isValidWholeDiskBSD(bsdName) else {
+            return reply(false, "Invalid disk identifier: \(bsdName)")
+        }
+        guard FileManager.default.fileExists(atPath: isoPath) else {
+            return reply(false, "The image wasn't found at \(isoPath).")
+        }
+        if let boot = Self.bootDiskBSDName(), boot == bsdName {
+            return reply(false, "Operation rejected: the target is the system boot disk.")
+        }
+        if case .failure(let message) = Self.validateRemovableExternal(bsdName, diskutil: diskutil) {
+            return reply(false, message)
+        }
+
+        // The WHOLE disk must be unmounted before writing to the raw device.
+        let unmount = Self.runProcess(diskutil, ["unmountDisk", "force", "/dev/\(bsdName)"])
+        guard unmount.status == 0 else {
+            let msg = String(data: unmount.stderr, encoding: .utf8) ?? ""
+            return reply(false, "Couldn't unmount the disk before writing: \(msg)")
+        }
+
+        // Reverse progress channel back to the app (if available).
+        let progress = NSXPCConnection.current()?.remoteObjectProxy as? HelperProgressProtocol
+
+        let result = Self.rawWrite(isoPath: isoPath, bsdName: bsdName) { written, total in
+            progress?.didWrite(bytes: written, of: total)
+        }
+        if result.ok {
+            _ = Self.runProcess(diskutil, ["eject", "/dev/\(bsdName)"])
+        }
+        reply(result.ok, result.message)
+    }
+
+    /// Dumps the ISO byte by byte onto `/dev/rdiskN` (raw device, fast).
+    /// Writes are aligned to the device's block size (the last block is padded
+    /// with zeros, which is harmless). No fallback: any IO failure aborts.
+    static func rawWrite(isoPath: String,
+                         bsdName: String,
+                         progress: (Int64, Int64) -> Void) -> (ok: Bool, message: String?) {
+
+        let total = (try? FileManager.default.attributesOfItem(atPath: isoPath)[.size] as? NSNumber)??.int64Value ?? 0
+
+        guard let input = FileHandle(forReadingAtPath: isoPath) else {
+            return (false, "Couldn't open the image for reading.")
+        }
+        defer { try? input.close() }
+
+        // Raw device: /dev/rdiskN is much faster than /dev/diskN.
+        let fd = open("/dev/r\(bsdName)", O_RDWR)
+        guard fd >= 0 else {
+            return (false, "Couldn't open the device /dev/r\(bsdName) (errno \(errno)).")
+        }
+        defer { close(fd) }
+
+        // Physical block size of the device (used to align writes).
+        var blockSize: UInt32 = 512
+        _ = ioctl(fd, 0x40046418 /* DKIOCGETBLOCKSIZE */, &blockSize)
+        let bs = Int(blockSize == 0 ? 512 : blockSize)
+        let chunk = max(bs, (4 * 1024 * 1024 / bs) * bs)   // ~4 MiB, multiple of the block
+
+        var writtenTotal: Int64 = 0
+        while true {
+            let data = (try? input.read(upToCount: chunk)) ?? Data()
+            if data.isEmpty { break }
+
+            // Align the last block: pad with zeros up to a multiple of the block size.
+            var buf = data
+            if buf.count % bs != 0 {
+                buf.append(Data(count: bs - (buf.count % bs)))
+            }
+
+            let wrote: Int = buf.withUnsafeBytes { raw in
+                write(fd, raw.baseAddress, buf.count)
+            }
+            if wrote < 0 {
+                return (false, "Write error on the device (errno \(errno)).")
+            }
+            writtenTotal += Int64(data.count)
+            progress(min(writtenTotal, total), total)
+        }
+
+        guard fcntl(fd, F_FULLFSYNC) == 0 else {
+            return (false, "Couldn't sync the device (errno \(errno)).")
+        }
+        return (true, nil)
+    }
+
+    // MARK: - Validation
 
     static func isValidWholeDiskBSD(_ bsd: String) -> Bool {
         bsd.range(of: "^disk[0-9]+$", options: .regularExpression) != nil
@@ -71,23 +164,29 @@ final class HelperService: NSObject, HelperProtocol {
               let plist = (try? PropertyListSerialization.propertyList(from: r.stdout,
                                                                        options: [],
                                                                        format: nil)) as? [String: Any] else {
-            return .failure("No se pudo leer la información del disco \(bsd).")
+            return .failure("Couldn't read the disk info for \(bsd).")
         }
         let whole = (plist["WholeDisk"] as? Bool) ?? false
-        // Fail-safe: si no se conoce, se trata como interno (rechazar).
+        // Fail-safe: if unknown, treat it as internal (reject).
         let isInternal = (plist["Internal"] as? Bool) ?? true
         let ejectable = (plist["Ejectable"] as? Bool) ?? false
         let removable = (plist["RemovableMedia"] as? Bool) ?? false
+        // Defense in depth (S-4): reject virtual devices / disk images even if
+        // they present themselves as external + removable.
+        let virtualOrPhysical = (plist["VirtualOrPhysical"] as? String) ?? ""
 
-        guard whole else { return .failure("El target no es un disco físico completo.") }
-        guard !isInternal else { return .failure("El target es un disco interno. Operación rechazada.") }
+        guard whole else { return .failure("The target is not a whole physical disk.") }
+        guard !isInternal else { return .failure("The target is an internal disk. Operation rejected.") }
+        guard virtualOrPhysical.caseInsensitiveCompare("Virtual") != .orderedSame else {
+            return .failure("The target is a virtual device (disk image). Operation rejected.")
+        }
         guard ejectable || removable else {
-            return .failure("El target no es un medio extraíble. Operación rechazada.")
+            return .failure("The target is not removable media. Operation rejected.")
         }
         return .success
     }
 
-    // MARK: - Formateo
+    // MARK: - Formatting
 
     static func runDiskutilErase(bsdName: String, label: String, diskutil: String) -> (ok: Bool, message: String?) {
         let r = runProcess(diskutil, ["eraseDisk", "MS-DOS", label, "GPT", "/dev/\(bsdName)"])
@@ -95,12 +194,12 @@ final class HelperService: NSObject, HelperProtocol {
         let err = String(data: r.stderr, encoding: .utf8) ?? ""
         let out = String(data: r.stdout, encoding: .utf8) ?? ""
         let message = (err.isEmpty ? out : err).trimmingCharacters(in: .whitespacesAndNewlines)
-        return (false, message.isEmpty ? "diskutil falló (código \(r.status))." : message)
+        return (false, message.isEmpty ? "diskutil failed (code \(r.status))." : message)
     }
 
-    // MARK: - Utilidades
+    // MARK: - Utilities
 
-    /// Disco físico que respalda "/", normalizado a "diskN".
+    /// Physical disk backing "/", normalized to "diskN".
     static func bootDiskBSDName() -> String? {
         var s = statfs()
         guard statfs("/", &s) == 0 else { return nil }
@@ -123,7 +222,7 @@ final class HelperService: NSObject, HelperProtocol {
         do {
             try task.run()
         } catch {
-            return (-1, Data(), Data("No se pudo ejecutar \(launchPath): \(error)".utf8))
+            return (-1, Data(), Data("Couldn't run \(launchPath): \(error)".utf8))
         }
         let oData = out.fileHandleForReading.readDataToEndOfFile()
         let eData = err.fileHandleForReading.readDataToEndOfFile()

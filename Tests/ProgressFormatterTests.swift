@@ -1,20 +1,20 @@
 import XCTest
-@testable import WinUSBMac
+@testable import UsbFromMac
 
 final class ProgressFormatterTests: XCTestCase {
 
-    // MARK: Porcentaje (clampeado y redondeado)
+    // MARK: Percentage (clamped and rounded)
 
     func testPercentRoundsAndClamps() {
         XCTAssertEqual(ProgressFormatter.percent(0), "0 %")
         XCTAssertEqual(ProgressFormatter.percent(0.474), "47 %")
         XCTAssertEqual(ProgressFormatter.percent(0.475), "48 %")
         XCTAssertEqual(ProgressFormatter.percent(1), "100 %")
-        XCTAssertEqual(ProgressFormatter.percent(1.5), "100 %")   // clamp arriba
-        XCTAssertEqual(ProgressFormatter.percent(-0.3), "0 %")    // clamp abajo
+        XCTAssertEqual(ProgressFormatter.percent(1.5), "100 %")   // clamp high
+        XCTAssertEqual(ProgressFormatter.percent(-0.3), "0 %")    // clamp low
     }
 
-    // MARK: Duración legible
+    // MARK: Human-readable duration
 
     func testDurationFormatting() {
         XCTAssertEqual(ProgressFormatter.duration(0), "0 s")
@@ -23,13 +23,13 @@ final class ProgressFormatterTests: XCTestCase {
         XCTAssertEqual(ProgressFormatter.duration(60), "1 min")
         XCTAssertEqual(ProgressFormatter.duration(72), "1 min 12 s")
         XCTAssertEqual(ProgressFormatter.duration(120), "2 min")
-        XCTAssertEqual(ProgressFormatter.duration(-5), "0 s")     // no negativos
+        XCTAssertEqual(ProgressFormatter.duration(-5), "0 s")     // no negatives
     }
 
     // MARK: ETA
 
     func testETAComputesRemainingTime() {
-        // 100 MB restantes a 10 MB/s → 10 s.
+        // 100 MB remaining at 10 MB/s → 10 s.
         let eta = ProgressFormatter.eta(remainingBytes: 100_000_000, bytesPerSecond: 10_000_000)
         XCTAssertEqual(eta, "10 s")
     }
@@ -39,19 +39,19 @@ final class ProgressFormatterTests: XCTestCase {
         XCTAssertNil(ProgressFormatter.eta(remainingBytes: 1_000_000, bytesPerSecond: 1))
     }
 
-    // MARK: Línea de transferencia (estructura, sin depender del locale de bytes)
+    // MARK: Transfer line (structure, without depending on the byte locale)
 
     func testTransferLineStructure() {
-        // Idioma-agnóstico: validamos estructura y datos, no las palabras
-        // (que dependen del idioma de la app: "de"/"of", "faltan"/"left").
+        // Language-agnostic: we validate structure and data, not the words
+        // (which depend on the app's language: "de"/"of", "faltan"/"left").
         let line = ProgressFormatter.transferLine(done: 3_000_000_000,
                                                   total: 6_000_000_000,
                                                   bytesPerSecond: 50_000_000)
         let parts = line.components(separatedBy: " · ")
-        XCTAssertEqual(parts.count, 3, "esperaba progreso · velocidad · ETA: \(line)")
-        XCTAssertTrue(parts[0].contains("50 %"), "esperaba porcentaje: \(line)")
-        XCTAssertTrue(parts[1].contains("/s"), "esperaba velocidad: \(line)")
-        XCTAssertFalse(parts[2].isEmpty, "esperaba ETA no vacío: \(line)")
+        XCTAssertEqual(parts.count, 3, "expected progress · speed · ETA: \(line)")
+        XCTAssertTrue(parts[0].contains("50 %"), "expected percentage: \(line)")
+        XCTAssertTrue(parts[1].contains("/s"), "expected speed: \(line)")
+        XCTAssertFalse(parts[2].isEmpty, "expected non-empty ETA: \(line)")
     }
 
     func testTransferLineOmitsRateWhenNil() {

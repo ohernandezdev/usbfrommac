@@ -1,6 +1,6 @@
 import Foundation
 
-/// Progreso de copia (bytes y archivo actual).
+/// Copy progress (bytes and current file).
 public struct CopyProgress: Equatable {
     public let bytesCopied: UInt64
     public let totalBytes: UInt64
@@ -25,9 +25,9 @@ public enum CopyServiceError: LocalizedError, Equatable {
     }
 }
 
-/// Copia el contenido del ISO montado al USB EXCLUYENDO archivos concretos
-/// (RF-7: todo menos `sources/install.wim`). Copia por streaming para reportar
-/// progreso por bytes y poder cancelar de forma limpia a mitad (S-5).
+/// Copies the contents of the mounted ISO to the USB drive, EXCLUDING specific
+/// files (RF-7: everything except `sources/install.wim`). Copies via streaming
+/// to report byte-level progress and to allow clean cancellation midway (S-5).
 public final class CopyService {
 
     private let chunkSize = 4 * 1024 * 1024
@@ -35,10 +35,10 @@ public final class CopyService {
     public init() {}
 
     /// - Parameters:
-    ///   - sourceRoot: raíz del ISO montado.
-    ///   - destinationRoot: raíz del volumen USB.
-    ///   - excluding: rutas relativas a excluir (p. ej. "sources/install.wim").
-    ///     La comparación es case-insensitive (los montajes UDF lo son).
+    ///   - sourceRoot: root of the mounted ISO.
+    ///   - destinationRoot: root of the USB volume.
+    ///   - excluding: relative paths to exclude (e.g. "sources/install.wim").
+    ///     The comparison is case-insensitive (UDF mounts are).
     public func copy(from sourceRoot: URL,
                      to destinationRoot: URL,
                      excluding: Set<String> = ["sources/install.wim"],
@@ -48,7 +48,7 @@ public final class CopyService {
         let fm = FileManager.default
         let excludedLower = Set(excluding.map { $0.lowercased() })
 
-        // 1. Enumerar archivos a copiar y calcular el total (excluye lo apartado).
+        // 1. Enumerate the files to copy and compute the total (excluding the set-aside ones).
         var files: [(src: URL, rel: String, size: UInt64)] = []
         var total: UInt64 = 0
 
@@ -76,7 +76,7 @@ public final class CopyService {
             }
         }
 
-        // 2. Copiar por streaming, creando subdirectorios según haga falta.
+        // 2. Stream the copy, creating subdirectories as needed.
         var copied: UInt64 = 0
         for f in files {
             if isCancelled() { throw CopyServiceError.cancelled }
@@ -94,7 +94,7 @@ public final class CopyService {
         }
     }
 
-    // MARK: - Privado
+    // MARK: - Private
 
     private func streamCopy(from src: URL,
                             to dest: URL,
@@ -128,7 +128,7 @@ public final class CopyService {
         }
     }
 
-    /// Ruta relativa de `url` respecto a `base`, sin barra inicial.
+    /// Relative path of `url` with respect to `base`, without a leading slash.
     static func relativePath(of url: URL, base: URL) -> String {
         let basePath = base.standardizedFileURL.path
         let path = url.standardizedFileURL.path

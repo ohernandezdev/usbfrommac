@@ -1,10 +1,10 @@
 import Foundation
 import CryptoKit
 
-/// Un ISO ya montado por hdiutil.
+/// An ISO already mounted by hdiutil.
 public struct MountedISO: Equatable {
     public let mountPoint: URL    // /Volumes/CCCOMA_…
-    public let deviceNode: String // /dev/diskN (whole) para detach
+    public let deviceNode: String // /dev/diskN (whole) for detach
 }
 
 public enum ISOServiceError: LocalizedError, Equatable {
@@ -25,17 +25,17 @@ public enum ISOServiceError: LocalizedError, Equatable {
     }
 }
 
-/// Monta/desmonta el ISO, lo inspecciona y calcula su SHA-256.
-/// Todo corre como usuario (no requiere root).
+/// Mounts/unmounts the ISO, inspects it, and computes its SHA-256.
+/// Everything runs as the user (no root required).
 public final class ISOService {
 
     private let hdiutil = "/usr/bin/hdiutil"
 
     public init() {}
 
-    // MARK: - Montaje
+    // MARK: - Mounting
 
-    /// Monta el ISO en modo solo lectura y sin abrir Finder (RF-6).
+    /// Mounts the ISO read-only and without opening Finder (RF-6).
     public func attach(_ iso: URL) throws -> MountedISO {
         let r = Subprocess.run(hdiutil, ["attach", "-nobrowse", "-readonly", "-plist", iso.path])
         guard r.succeeded else { throw ISOServiceError.attachFailed(r.errorMessage) }
@@ -44,7 +44,7 @@ public final class ISOService {
               let entities = plist["system-entities"] as? [[String: Any]] else {
             throw ISOServiceError.notMountable
         }
-        // Buscar la entidad con punto de montaje.
+        // Find the entity with a mount point.
         guard let mounted = entities.first(where: { ($0["mount-point"] as? String)?.isEmpty == false }),
               let mountPath = mounted["mount-point"] as? String else {
             throw ISOServiceError.notMountable
@@ -54,18 +54,18 @@ public final class ISOService {
         return MountedISO(mountPoint: URL(fileURLWithPath: mountPath), deviceNode: whole)
     }
 
-    /// Desmonta el ISO. Garantiza limpieza incluso si la vía normal falla (S-5).
+    /// Unmounts the ISO. Guarantees cleanup even if the normal path fails (S-5).
     public func detach(_ mounted: MountedISO) throws {
         let r = Subprocess.run(hdiutil, ["detach", mounted.mountPoint.path])
         if r.succeeded { return }
-        // Reintento forzado antes de rendirse.
+        // Forced retry before giving up.
         let forced = Subprocess.run(hdiutil, ["detach", "-force", mounted.mountPoint.path])
         if !forced.succeeded {
             throw ISOServiceError.detachFailed(forced.errorMessage)
         }
     }
 
-    // MARK: - Inspección
+    // MARK: - Inspection
 
     public func inspect(_ mounted: MountedISO, isoURL: URL) -> ISOInfo {
         let fm = FileManager.default
@@ -90,11 +90,14 @@ public final class ISOService {
         let hasESD = exists("sources/install.esd")
         let isWindows = hasSetup && hasSources && (hasWIM || hasESD)
 
-        // Archivos de arranque candidatos (proxy de antigüedad para Secure Boot).
+        // Candidate boot files (an age proxy for Secure Boot).
         let bootCandidates = ["efi/boot/bootx64.efi", "boot/bootx64.efi", "bootmgr.efi", "bootmgr"]
         let newestBoot = bootCandidates.compactMap(modDate).max()
 
         let isoSize = (try? fm.attributesOfItem(atPath: isoURL.path)[.size] as? NSNumber)??.uint64Value ?? 0
+
+        // Classify the boot strategy by reading the ISO header (MBR/El Torito).
+        let bootType = ISOBootDetector.detect(isoAt: isoURL, isWindows: isWindows)
 
         return ISOInfo(
             url: isoURL,
@@ -103,19 +106,20 @@ public final class ISOService {
             isWindowsInstaller: isWindows,
             installWIMSizeBytes: wimSize,
             usesESD: hasESD && !hasWIM,
-            newestBootFileDate: newestBoot
+            newestBootFileDate: newestBoot,
+            bootType: bootType
         )
     }
 
     // MARK: - SHA-256 (streaming, cancelable)
 
-    /// Calcula el SHA-256 del archivo en streaming (no carga el ISO en RAM).
-    /// `progress` recibe 0…1; `isCancelled` permite abortar (S-4 del flujo).
+    /// Computes the file's SHA-256 in streaming mode (doesn't load the ISO into RAM).
+    /// `progress` receives 0…1; `isCancelled` allows aborting (S-4 of the flow).
     public func sha256(of url: URL,
                        progress: ((Double) -> Void)? = nil,
                        isCancelled: () -> Bool = { false }) throws -> String {
         guard let handle = try? FileHandle(forReadingFrom: url) else {
-            throw ISOServiceError.readFailed("No se pudo abrir \(url.lastPathComponent).")
+            throw ISOServiceError.readFailed("Couldn't open \(url.lastPathComponent).")
         }
         defer { try? handle.close() }
 
@@ -141,7 +145,7 @@ public final class ISOService {
         return Self.hexString(hasher.finalize())
     }
 
-    /// Normaliza un hash para comparar (minúsculas, sin espacios) — CA-3.
+    /// Normalizes a hash for comparison (lowercase, no spaces) — CA-3.
     public static func normalizedHash(_ s: String) -> String {
         s.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
     }
@@ -150,7 +154,7 @@ public final class ISOService {
         normalizedHash(a) == normalizedHash(b)
     }
 
-    // MARK: - Privado
+    // MARK: - Private
 
     private static func hexString<D: Sequence>(_ digest: D) -> String where D.Element == UInt8 {
         digest.map { String(format: "%02x", $0) }.joined()
