@@ -8,7 +8,10 @@ on:
 jobs:
   test:
     name: Build & test
-    runs-on: macos-14
+    # macos-14's bundled Xcode (15.x) can't open the project format the
+    # installed xcodegen/XcodeProj writes (format 77): "future Xcode project
+    # file format". Needs an Xcode new enough to read it.
+    runs-on: macos-26
 
     steps:
       - name: Checkout
@@ -16,6 +19,9 @@ jobs:
 
       - name: Install tooling
         run: brew install xcodegen wimlib
+
+      - name: Xcode version
+        run: xcodebuild -version
 
       - name: Generate Xcode project
         run: xcodegen generate
