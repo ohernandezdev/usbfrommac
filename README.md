@@ -5,7 +5,7 @@ Create a bootable Windows or Linux USB drive from an ISO on macOS — safely. A 
 [![Platform: macOS 13+](https://img.shields.io/badge/platform-macOS%2013%2B-blue.svg)](https://www.apple.com/macos/)
 [![License: GPLv3](https://img.shields.io/badge/license-GPLv3-green.svg)](LICENSE)
 [![Language: Swift](https://img.shields.io/badge/language-Swift%205.9-orange.svg)](https://swift.org)
-[![Latest release](https://img.shields.io/github/v/release/ohernandezdev/usbfrommac?label=download)](https://github.com/ohernandezdev/usbfrommac/releases/latest)
+[![Latest release](https://img.shields.io/github/v/release/ohernandezdev/flint?label=download)](https://github.com/ohernandezdev/flint/releases/latest)
 
 Flint is a native macOS app (Swift 5.9 + SwiftUI) that turns a Windows ISO **or** a Linux / isohybrid ISO into a bootable USB stick — without Boot Camp, without third-party closed binaries, and without ever putting your internal disk at risk.
 
@@ -13,7 +13,7 @@ The app inspects each ISO's boot structure and automatically picks the right str
 
 ## Download
 
-Grab the latest signed and notarized build from the **[Releases page](https://github.com/ohernandezdev/usbfrommac/releases/latest)**: download the `.dmg`, drag **Flint** into Applications, and open it. On first launch, macOS will ask you to approve the privileged helper in **System Settings → General → Login Items** — that's expected, it's the root component that does the actual disk formatting/writing (see [Safety model](#safety-model)).
+Grab the latest signed and notarized build from the **[Releases page](https://github.com/ohernandezdev/flint/releases/latest)**: download the `.dmg`, drag **Flint** into Applications, and open it. On first launch, macOS will ask you to approve the privileged helper in **System Settings → General → Login Items** — that's expected, it's the root component that does the actual disk formatting/writing (see [Safety model](#safety-model)).
 
 ## Table of Contents
 
