@@ -1,0 +1,448 @@
+<title>Flint — Bootable USB creator for macOS</title>
+<style>
+  :root {
+    --canvas: #FAFAFA;
+    --surface1: #FFFFFF;
+    --surface2: #F5F5F5;
+    --hairline: rgba(0,0,0,0.14);
+    --hairline-strong: rgba(0,0,0,0.18);
+    --ink: #171717;
+    --ink-muted: #4D4D4D;
+    --ink-subtle: #8F8F8F;
+    --on-primary: #FFFFFF;
+    --link: #0070F3;
+    --warning: #F5A623;
+    --error: #EE0000;
+    --shadow-contact: rgba(0,0,0,0.05);
+    --shadow-diffuse: rgba(0,0,0,0.08);
+    --code-bg: #F5F5F5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --canvas: #000000;
+      --surface1: #0A0A0A;
+      --surface2: #1A1A1A;
+      --hairline: rgba(255,255,255,0.14);
+      --hairline-strong: rgba(255,255,255,0.18);
+      --ink: #EDEDED;
+      --ink-muted: #A1A1A1;
+      --ink-subtle: #8A8A8A;
+      --on-primary: #0A0A0A;
+      --link: #3291FF;
+      --warning: #F7B955;
+      --error: #FF6166;
+      --shadow-contact: rgba(0,0,0,0.6);
+      --shadow-diffuse: rgba(0,0,0,0.45);
+      --code-bg: #1A1A1A;
+    }
+  }
+  :root[data-theme="dark"] {
+    --canvas: #000000; --surface1: #0A0A0A; --surface2: #1A1A1A;
+    --hairline: rgba(255,255,255,0.14); --hairline-strong: rgba(255,255,255,0.18);
+    --ink: #EDEDED; --ink-muted: #A1A1A1; --ink-subtle: #8A8A8A;
+    --on-primary: #0A0A0A; --link: #3291FF; --warning: #F7B955; --error: #FF6166;
+    --shadow-contact: rgba(0,0,0,0.6); --shadow-diffuse: rgba(0,0,0,0.45); --code-bg: #1A1A1A;
+  }
+  :root[data-theme="light"] {
+    --canvas: #FAFAFA; --surface1: #FFFFFF; --surface2: #F5F5F5;
+    --hairline: rgba(0,0,0,0.14); --hairline-strong: rgba(0,0,0,0.18);
+    --ink: #171717; --ink-muted: #4D4D4D; --ink-subtle: #8F8F8F;
+    --on-primary: #FFFFFF; --link: #0070F3; --warning: #F5A623; --error: #EE0000;
+    --shadow-contact: rgba(0,0,0,0.05); --shadow-diffuse: rgba(0,0,0,0.08); --code-bg: #F5F5F5;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--canvas);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    line-height: 1.5;
+  }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  a:focus-visible, button:focus-visible { outline: 2px solid var(--link); outline-offset: 2px; border-radius: 4px; }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  /* ---- Nav ---- */
+  .nav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .nav .wrap { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; letter-spacing: -0.2px; }
+  .brand img { width: 22px; height: 22px; border-radius: 6px; }
+  .nav-links { display: flex; align-items: center; gap: 24px; font-size: 14px; color: var(--ink-muted); }
+  .nav-links a { color: var(--ink-muted); }
+  .nav-links a:hover { color: var(--ink); }
+
+  /* ---- Hero ---- */
+  .hero { padding: 96px 0 64px; text-align: center; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 500; color: var(--ink-muted);
+    background: var(--surface2); border: 1px solid var(--hairline);
+    padding: 5px 12px; border-radius: 999px; margin-bottom: 24px;
+  }
+  .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--link); }
+  h1.display {
+    font-size: 56px; font-weight: 600; letter-spacing: -1.6px; line-height: 1.05;
+    margin: 0 0 20px; text-wrap: balance;
+  }
+  .hero p.lede {
+    font-size: 19px; color: var(--ink-muted); max-width: 560px; margin: 0 auto 36px;
+    line-height: 1.55;
+  }
+  .cta-row { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 12px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 600; letter-spacing: -0.1px;
+    padding: 11px 20px; border-radius: 6px; border: 1px solid transparent;
+    cursor: pointer; min-height: 40px;
+  }
+  .btn-primary {
+    background: var(--ink); color: var(--on-primary);
+    box-shadow: 0 2px 6px var(--shadow-diffuse);
+  }
+  .btn-primary:hover { opacity: 0.92; text-decoration: none; }
+  .btn-secondary {
+    background: var(--surface1); color: var(--ink); border-color: var(--hairline-strong);
+  }
+  .btn-secondary:hover { background: var(--surface2); text-decoration: none; }
+  .hero-meta { font-size: 12.5px; color: var(--ink-subtle); }
+
+  /* ---- Hero screenshot ---- */
+  .hero-shot {
+    margin-top: 56px; position: relative;
+  }
+  .hero-shot img {
+    width: 100%; max-width: 860px; display: block; margin: 0 auto;
+    border-radius: 10px; border: 1px solid var(--hairline);
+    box-shadow: 0 1px 1px var(--shadow-contact), 0 20px 40px -12px var(--shadow-diffuse);
+  }
+
+  /* ---- Why I built this ---- */
+  .why-card {
+    max-width: 640px; margin: 56px auto 0; padding: 20px 24px;
+    border-left: 2px solid var(--link); background: var(--surface1);
+    border-radius: 0 10px 10px 0; text-align: left;
+  }
+  .why-copy { font-size: 14.5px; color: var(--ink-muted); line-height: 1.65; margin: 0; }
+
+  /* ---- Section shell ---- */
+  section { padding: 88px 0; }
+  section.alt { background: var(--surface1); border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); }
+  .section-head { max-width: 640px; margin: 0 0 48px; }
+  .section-head.center { margin-left: auto; margin-right: auto; text-align: center; }
+  .kicker { font-size: 13px; font-weight: 600; color: var(--link); letter-spacing: -0.1px; margin: 0 0 10px; }
+  h2.headline { font-size: 32px; font-weight: 600; letter-spacing: -0.9px; margin: 0 0 12px; text-wrap: balance; }
+  .section-head p { font-size: 16px; color: var(--ink-muted); margin: 0; line-height: 1.6; }
+
+  /* ---- How it works: step cards with screenshots ---- */
+  .steps {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px;
+  }
+  .step-card {
+    background: var(--surface1); border: 1px solid var(--hairline); border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 1px var(--shadow-contact), 0 10px 24px -8px var(--shadow-diffuse);
+  }
+  .step-card img { width: 100%; display: block; border-bottom: 1px solid var(--hairline); }
+  .step-card .step-body { padding: 16px; }
+  .step-num { font-size: 12px; font-weight: 600; color: var(--ink-subtle); letter-spacing: -0.1px; margin-bottom: 6px; }
+  .step-title { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; margin: 0 0 4px; }
+  .step-desc { font-size: 13px; color: var(--ink-muted); margin: 0; line-height: 1.5; }
+
+  /* ---- Feature grid ---- */
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .feature-card {
+    background: var(--surface1); border: 1px solid var(--hairline); border-radius: 10px;
+    padding: 24px; box-shadow: 0 1px 1px var(--shadow-contact), 0 10px 24px -8px var(--shadow-diffuse);
+  }
+  .feature-icon {
+    width: 36px; height: 36px; border-radius: 8px; background: var(--surface2);
+    display: flex; align-items: center; justify-content: center; margin-bottom: 16px;
+    border: 1px solid var(--hairline);
+    color: var(--ink);
+  }
+  .feature-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+  .feature-title { font-size: 15.5px; font-weight: 600; letter-spacing: -0.2px; margin: 0 0 8px; }
+  .feature-desc { font-size: 13.5px; color: var(--ink-muted); margin: 0; line-height: 1.55; }
+
+  /* ---- Safety / architecture section ---- */
+  .safety-grid { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 48px; align-items: start; }
+  .safeguard-list { display: flex; flex-direction: column; gap: 4px; }
+  .safeguard {
+    display: flex; gap: 14px; padding: 16px 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .safeguard:last-child { border-bottom: none; }
+  .safeguard-tag {
+    flex-shrink: 0; font-size: 11px; font-weight: 600; color: var(--ink-muted);
+    background: var(--surface2); border: 1px solid var(--hairline);
+    padding: 3px 8px; border-radius: 6px; height: fit-content;
+    font-variant-numeric: tabular-nums;
+  }
+  .safeguard-copy { font-size: 14px; color: var(--ink-muted); line-height: 1.55; }
+  .safeguard-copy b { color: var(--ink); font-weight: 600; }
+
+  .arch-diagram {
+    background: var(--surface1); border: 1px solid var(--hairline); border-radius: 10px;
+    padding: 28px 20px;
+    box-shadow: 0 1px 1px var(--shadow-contact), 0 10px 24px -8px var(--shadow-diffuse);
+  }
+  .arch-box {
+    border: 1px solid var(--hairline-strong); border-radius: 8px; padding: 12px 16px;
+    font-size: 13px; font-weight: 600; letter-spacing: -0.1px; text-align: center;
+    background: var(--surface2);
+  }
+  .arch-box.priv { background: var(--ink); color: var(--on-primary); border-color: var(--ink); }
+  .arch-arrow { text-align: center; font-size: 12px; color: var(--ink-subtle); padding: 8px 0; font-family: ui-monospace, monospace; }
+  .arch-caption { font-size: 12px; color: var(--ink-subtle); text-align: center; margin-top: 14px; line-height: 1.5; }
+
+  /* ---- Comparison table ---- */
+  .compare-wrap { overflow-x: auto; border: 1px solid var(--hairline); border-radius: 10px; box-shadow: 0 1px 1px var(--shadow-contact), 0 10px 24px -8px var(--shadow-diffuse); }
+  table.compare { width: 100%; border-collapse: collapse; background: var(--surface1); font-size: 13.5px; min-width: 620px; }
+  table.compare th, table.compare td { padding: 14px 16px; text-align: left; border-bottom: 1px solid var(--hairline); }
+  table.compare th { font-weight: 600; color: var(--ink-muted); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  table.compare td:not(:first-child), table.compare th:not(:first-child) { text-align: center; }
+  table.compare tr:last-child td { border-bottom: none; }
+  table.compare tr.highlight td { background: var(--surface2); }
+  table.compare td:first-child { font-weight: 600; }
+  .yes { color: var(--link); font-weight: 700; }
+  .no { color: var(--ink-subtle); }
+
+  /* ---- Final CTA ---- */
+  .final-cta { text-align: center; padding: 88px 0 96px; }
+  .final-cta h2 { font-size: 34px; font-weight: 600; letter-spacing: -1px; margin: 0 0 14px; text-wrap: balance; }
+  .final-cta p { font-size: 16px; color: var(--ink-muted); margin: 0 0 32px; }
+
+  /* ---- Footer ---- */
+  footer { border-top: 1px solid var(--hairline); padding: 32px 0; }
+  footer .wrap { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  .foot-links { display: flex; gap: 20px; font-size: 13px; color: var(--ink-muted); }
+  .foot-links a { color: var(--ink-muted); }
+  .foot-links a:hover { color: var(--ink); }
+  .foot-copy { font-size: 12.5px; color: var(--ink-subtle); }
+
+  @media (max-width: 860px) {
+    .steps { grid-template-columns: repeat(2, 1fr); }
+    .features { grid-template-columns: 1fr 1fr; }
+    .safety-grid { grid-template-columns: 1fr; }
+    h1.display { font-size: 38px; letter-spacing: -1px; }
+  }
+  @media (max-width: 560px) {
+    .steps { grid-template-columns: 1fr; }
+    .features { grid-template-columns: 1fr; }
+  }
+</style>
+
+<nav class="nav">
+  <div class="wrap">
+    <div class="brand">
+      <img src="assets/icon.png" alt="" />
+      Flint
+    </div>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#safety">Safety</a>
+      <a href="#compare">Compare</a>
+      <a href="https://github.com/ohernandezdev/flint">GitHub ↗</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="eyebrow"><span class="dot"></span> Open source · GPLv3</span>
+    <h1 class="display">A bootable USB, made<br />without touching Terminal.</h1>
+    <p class="lede">Flint turns a Windows or Linux ISO into a bootable USB on macOS — with a disk whitelist that makes it structurally impossible to erase the wrong drive.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://github.com/ohernandezdev/flint/releases/latest">Download for macOS</a>
+      <a class="btn btn-secondary" href="#how">See how it works</a>
+    </div>
+    <div class="hero-meta">macOS 13+ · Universal (Apple Silicon &amp; Intel) · Signed &amp; notarized</div>
+
+    <div class="hero-shot">
+      <img src="assets/windows-detected.png" alt="Flint detecting a Windows 11 ISO" />
+    </div>
+
+    <div class="why-card">
+      <p class="why-copy">I bought a new PC to build and needed a bootable Windows USB from a Mac. The choices were paying for one of the few macOS tools that do this, or trusting an unverified binary from a random site — for a tool that formats a disk and runs as root, neither sat right. There wasn't a free, open, and safe option, so I built the one I wanted. Writing it solo was realistic because most of the implementation happened alongside an AI coding agent — the kind of tool-assisted development that's only become practical the last couple of years.</p>
+    </div>
+  </div>
+</header>
+
+<section id="how">
+  <div class="wrap">
+    <div class="section-head center">
+      <p class="kicker">How it works</p>
+      <h2 class="headline">Four steps. No terminal, no guessing.</h2>
+      <p>Flint inspects the ISO's boot structure and picks the right strategy automatically — FAT32 copy for Windows, raw byte-for-byte write for Linux.</p>
+    </div>
+    <div class="steps">
+      <div class="step-card">
+        <img src="assets/iso-empty.png" alt="Select ISO step" />
+        <div class="step-body">
+          <div class="step-num">Step 1</div>
+          <h3 class="step-title">Select your ISO</h3>
+          <p class="step-desc">Drag it in or browse. Flint reads the boot structure before touching anything.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <img src="assets/choose-usb.png" alt="Choose USB drive step" />
+        <div class="step-body">
+          <div class="step-num">Step 2</div>
+          <h3 class="step-title">Choose the USB drive</h3>
+          <p class="step-desc">Only external, physical, removable disks are ever listed. The internal disk cannot appear here.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <img src="assets/confirm-erase.png" alt="Confirm before erasing step" />
+        <div class="step-body">
+          <div class="step-num">Step 3</div>
+          <h3 class="step-title">Confirm before erasing</h3>
+          <p class="step-desc">Exact disk name and size, plus a deliberate checkbox — no accidental clicks.</p>
+        </div>
+      </div>
+      <div class="step-card">
+        <img src="assets/copy-progress.png" alt="Creating the USB step" />
+        <div class="step-body">
+          <div class="step-num">Step 4</div>
+          <h3 class="step-title">Watch it build</h3>
+          <p class="step-desc">Real bytes, real percentages, real ETA — for every phase, including the raw write.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt">
+  <div class="wrap">
+    <div class="section-head center">
+      <p class="kicker">Features</p>
+      <h2 class="headline">Built for the one job it does.</h2>
+    </div>
+    <div class="features">
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="8" height="16" rx="1.5"/><rect x="13" y="4" width="8" height="16" rx="1.5"/><line x1="3" y1="9" x2="11" y2="9"/><line x1="13" y1="9" x2="21" y2="9"/></svg></div>
+        <h3 class="feature-title">Windows and Linux, detected automatically</h3>
+        <p class="feature-desc">MBR + El Torito signatures decide the strategy. Windows installers get a FAT32 copy with install.wim split to fit; Linux/isohybrid images get written raw, exactly as the upstream image expects.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+        <h3 class="feature-title">USB-only, by construction</h3>
+        <p class="feature-desc">The picker enumerates disks through DiskArbitration and hard-excludes anything that isn't external + physical + removable. Not a UI filter — a code-level whitelist.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="4" y="4" width="11" height="7" rx="1.5"/><rect x="9" y="13" width="11" height="7" rx="1.5"/></svg></div>
+        <h3 class="feature-title">Privileged work, isolated</h3>
+        <p class="feature-desc">Only the destructive step runs as root, in a minimal helper reached over XPC. No AuthorizationExecuteWithPrivileges, no giving the whole app admin rights.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 3l7 3v5c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></svg></div>
+        <h3 class="feature-title">Optional SHA-256 verification</h3>
+        <p class="feature-desc">Paste the official hash and Flint computes and compares it before writing a single byte.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><rect x="3" y="8" width="18" height="8" rx="1.5"/><line x1="7" y1="8" x2="7" y2="11"/><line x1="11" y1="8" x2="11" y2="11"/><line x1="15" y1="8" x2="15" y2="11"/><line x1="19" y1="8" x2="19" y2="11"/></svg></div>
+        <h3 class="feature-title">Size guard for raw writes</h3>
+        <p class="feature-desc">The USB is checked against the ISO size up front, so a too-small stick can't fail mid-write and leave a half-written drive.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><line x1="3" y1="12" x2="21" y2="12"/></svg></div>
+        <h3 class="feature-title">Bilingual, real progress</h3>
+        <p class="feature-desc">English and Spanish UI. Live bytes, percentage, MB/s and ETA for every phase — never just a spinner.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="safety">
+  <div class="wrap">
+    <div class="section-head">
+      <p class="kicker">Safety model</p>
+      <h2 class="headline">Formatting a disk as root is the whole risk. Here's what contains it.</h2>
+      <p>Flint's most sensitive capability is erasing or raw-writing a disk from a privileged helper. Every safeguard below exists because of that one fact.</p>
+    </div>
+    <div class="safety-grid">
+      <div class="safeguard-list">
+        <div class="safeguard">
+          <span class="safeguard-tag">S&#8209;1</span>
+          <p class="safeguard-copy"><b>Code-level whitelist.</b> Only external + physical + removable USB media is ever surfaced. The boot disk and disk images are excluded before the UI ever sees them.</p>
+        </div>
+        <div class="safeguard">
+          <span class="safeguard-tag">S&#8209;2</span>
+          <p class="safeguard-copy"><b>Explicit destructive confirmation.</b> Exact disk name and size shown, plus a deliberate "I understand" toggle — no default-confirmed dialogs.</p>
+        </div>
+        <div class="safeguard">
+          <span class="safeguard-tag">S&#8209;3</span>
+          <p class="safeguard-copy"><b>Just-in-time revalidation.</b> The disk identifier is re-checked immediately before the write — not just once, at selection time.</p>
+        </div>
+        <div class="safeguard">
+          <span class="safeguard-tag">S&#8209;4</span>
+          <p class="safeguard-copy"><b>The helper trusts no one.</b> The privileged process independently re-verifies the target is removable and external before acting — it never takes the app's word for it.</p>
+        </div>
+        <div class="safeguard">
+          <span class="safeguard-tag">S&#8209;5</span>
+          <p class="safeguard-copy"><b>Fail-safe errors.</b> Any failure aborts cleanly. No silent half-formatted disks, ever.</p>
+        </div>
+      </div>
+      <div class="arch-diagram">
+        <div class="arch-box">Flint.app<br /><span style="font-weight:400;color:var(--ink-muted);font-size:12px;">runs as you, no special rights</span></div>
+        <div class="arch-arrow">↕ XPC, code-signature checked</div>
+        <div class="arch-box priv">FlintHelper (root)<br /><span style="font-weight:400;color:var(--on-primary);opacity:0.7;font-size:12px;">only eraseDisk + raw write</span></div>
+        <p class="arch-caption">Everything else — mounting, copying, splitting, verifying, ejecting — runs unprivileged, as you.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="alt" id="compare">
+  <div class="wrap">
+    <div class="section-head center">
+      <p class="kicker">Why not just&hellip;</p>
+      <h2 class="headline">The manual way works. It's also how you erase the wrong disk.</h2>
+    </div>
+    <div class="compare-wrap">
+      <table class="compare">
+        <thead>
+          <tr><th>&nbsp;</th><th>Flint</th><th>Rufus (Windows only)</th><th>Boot Camp Assistant</th><th>Manual Terminal</th></tr>
+        </thead>
+        <tbody>
+          <tr class="highlight"><td>Free &amp; open source</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+          <tr><td>Runs on macOS</td><td class="yes">✓</td><td class="no">—</td><td class="yes">✓</td><td class="yes">✓</td></tr>
+          <tr><td>Windows <em>and</em> Linux ISOs</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">Windows only</td><td class="yes">✓</td></tr>
+          <tr><td>Internal disk cannot appear</td><td class="yes">✓</td><td class="no">n/a</td><td class="no">n/a</td><td class="no">Your responsibility</td></tr>
+          <tr><td>No Terminal knowledge needed</td><td class="yes">✓</td><td class="yes">✓</td><td class="yes">✓</td><td class="no">✗</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<div class="final-cta">
+  <div class="wrap">
+    <h2>Requires macOS 13 or later.</h2>
+    <p>Universal binary · Apple Silicon &amp; Intel · Signed and notarized by Apple</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://github.com/ohernandezdev/flint/releases/latest">Download for macOS</a>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="wrap">
+    <div class="brand"><img src="assets/icon.png" alt="" /> Flint</div>
+    <div class="foot-links">
+      <a href="https://github.com/ohernandezdev/flint">GitHub</a>
+      <a href="https://github.com/ohernandezdev/flint/blob/main/LICENSE">License (GPLv3)</a>
+      <a href="https://github.com/ohernandezdev/flint/blob/main/SECURITY.md">Security policy</a>
+      <a href="https://github.com/ohernandezdev/flint/blob/main/CONTRIBUTING.md">Contributing</a>
+    </div>
+    <div class="foot-copy">Made for people who'd rather not lose a disk to a typo.</div>
+  </div>
+</footer>
