@@ -150,16 +150,14 @@ jobs:
 
           xcrun stapler staple "$DMG_PATH"
 
-          # `stapler staple` already validates the ticket it just attached, which
-          # is the real proof this worked. This spctl check is an extra sanity
-          # check for the "downloaded from the internet" Gatekeeper path — but
-          # that path only evaluates quarantined files, and the runner never set
-          # a quarantine xattr (no browser download happened here), so without
-          # this spctl fails with "rejected: source=Insufficient Context" even on
-          # a correctly notarized/stapled file. Fake the quarantine flag a real
-          # download would set, so the check reflects what a user will see.
-          xattr -w com.apple.quarantine "0081;00000000;Safari;" "$DMG_PATH"
-          spctl -a -vvv --type open "$DMG_PATH"
+          # `spctl -a --type open` (tried here in two earlier iterations, with and
+          # without a synthetic quarantine xattr) simulates how Launch Services
+          # would open a downloaded file, which needs a real WindowServer/user
+          # session — a headless Actions runner doesn't have one, so it reports
+          # "rejected: source=Insufficient Context" regardless of whether the file
+          # is actually fine. `stapler validate` checks the same ticket that
+          # `staple` just attached, without depending on that session.
+          xcrun stapler validate "$DMG_PATH"
 
       - name: Publish GitHub Release
         env:
