@@ -6,10 +6,17 @@ Create a bootable Windows or Linux USB drive from an ISO on macOS — safely. A 
 [![License: GPLv3](https://img.shields.io/badge/license-GPLv3-green.svg)](LICENSE)
 [![Language: Swift](https://img.shields.io/badge/language-Swift%205.9-orange.svg)](https://swift.org)
 [![Latest release](https://img.shields.io/github/v/release/ohernandezdev/flint?label=download)](https://github.com/ohernandezdev/flint/releases/latest)
+[![Landing page](https://img.shields.io/badge/site-flint-171717.svg)](https://ohernandezdev.github.io/flint/)
 
 Flint is a native macOS app (Swift 5.9 + SwiftUI) that turns a Windows ISO **or** a Linux / isohybrid ISO into a bootable USB stick — without Boot Camp, without third-party closed binaries, and without ever putting your internal disk at risk.
 
 The app inspects each ISO's boot structure and automatically picks the right strategy: Windows installers are copied to a FAT32 volume (with `install.wim` split so it fits), while Linux / isohybrid images are written raw, byte for byte, to the device.
+
+![Flint demo](docs/assets/demo.gif)
+
+## Why I built this
+
+I bought a new PC to build and needed a bootable Windows USB from a Mac. The choices were paying for one of the few macOS tools that do this, or trusting an unverified binary from a random site — for a tool that formats a disk and runs as root, neither sat right. There wasn't a free, open, and safe option, so I built the one I wanted. Writing it solo was realistic because most of the implementation happened alongside an AI coding agent — the kind of tool-assisted development that's only become practical the last couple of years.
 
 ## Download
 
@@ -17,6 +24,7 @@ Grab the latest signed and notarized build from the **[Releases page](https://gi
 
 ## Table of Contents
 
+- [Why I built this](#why-i-built-this)
 - [Download](#download)
 - [Features](#features)
 - [Safety model](#safety-model)
