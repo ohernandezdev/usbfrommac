@@ -33,7 +33,7 @@ xcodegen generate
 
 echo "▸ 3/6 Building Release (hardened runtime)…"
 rm -rf build/dd
-xcodebuild -project UsbFromMac.xcodeproj -scheme UsbFromMac -configuration Release \
+xcodebuild -project Flint.xcodeproj -scheme Flint -configuration Release \
   -derivedDataPath build/dd \
   CODE_SIGN_STYLE=Manual \
   CODE_SIGN_IDENTITY="$IDENTITY" \
@@ -41,18 +41,18 @@ xcodebuild -project UsbFromMac.xcodeproj -scheme UsbFromMac -configuration Relea
   ENABLE_HARDENED_RUNTIME=YES \
   clean build
 
-APP="build/dd/Build/Products/Release/UsbFromMac.app"
+APP="build/dd/Build/Products/Release/Flint.app"
 
 echo "▸ 4/6 Re-signing embedded helper and app…"
 codesign --force --options runtime --timestamp \
   --entitlements Helper/Helper.entitlements --sign "$IDENTITY" \
-  "$APP/Contents/MacOS/UsbFromMacHelper"
+  "$APP/Contents/MacOS/FlintHelper"
 codesign --force --options runtime --timestamp \
   --entitlements App/App.entitlements --sign "$IDENTITY" "$APP"
 
 echo "▸ 5/6 Notarizing…"
 mkdir -p build
-ZIP="build/UsbFromMac.zip"
+ZIP="build/Flint.zip"
 ditto -c -k --keepParent "$APP" "$ZIP"
 xcrun notarytool submit "$ZIP" --keychain-profile "$PROFILE" --wait
 

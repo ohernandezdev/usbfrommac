@@ -24,14 +24,22 @@ import Foundation
                    label: String,
                    reply: @escaping (Bool, String?) -> Void)
 
-    /// Version of the installed helper (to check that app and helper agree).
-    /// Writes `isoPath` RAW (`dd`-style) onto the `bsdName` disk.
+    /// Writes the ISO RAW (`dd`-style) onto the `bsdName` disk.
     ///
     /// For isohybrid ISOs (Linux/BSD) that must be dumped byte by byte to the device.
     /// Applies the SAME safeguards as `eraseDisk` (S-4): it revalidates that the
     /// target is whole + external + removable and that it is NOT the boot disk,
     /// unmounts the disk, and writes to `/dev/rdiskN`. Progress is reported over the
     /// reverse channel (`HelperProgressProtocol`).
+    ///
+    /// NOTE: the helper opens `isoPath` itself, which requires it to have Full Disk
+    /// Access if the ISO lives under a TCC-protected folder (Downloads, Desktop, …) —
+    /// root does not bypass TCC's per-folder protections. (An earlier attempt passed
+    /// an already-open `FileHandle` over XPC instead, to avoid that requirement, but
+    /// NSXPCInterface rejected it at decode time with "not in the interface of the
+    /// remote object" even after whitelisting the class via `setClasses`, for reasons
+    /// that weren't worth chasing further — reverted in favor of this simpler,
+    /// verifiable path + a one-time Full Disk Access grant.)
     ///
     /// - Parameters:
     ///   - isoPath: absolute path of the .iso file to dump.
@@ -54,10 +62,10 @@ import Foundation
 /// Shared constants app ↔ helper.
 public enum HelperConstants {
     /// Mach service name (must match the launchd plist and SMAppService).
-    public static let machServiceName = "com.omarhernandez.usbfrommac.helper"
+    public static let machServiceName = "com.omarhernandez.flint.helper"
 
     /// Name of the embedded launchd plist (used by SMAppService.daemon(plistName:)).
-    public static let plistName = "com.omarhernandez.usbfrommac.helper.plist"
+    public static let plistName = "com.omarhernandez.flint.helper.plist"
 
     /// Contract/helper version.
     public static let version = "1.0.0"
@@ -65,8 +73,8 @@ public enum HelperConstants {
     /// Maximum length of a FAT32 label.
     public static let maxFAT32LabelLength = 11
 
-    public static let appBundleID = "com.omarhernandez.usbfrommac"
-    public static let helperBundleID = "com.omarhernandez.usbfrommac.helper"
+    public static let appBundleID = "com.omarhernandez.flint"
+    public static let helperBundleID = "com.omarhernandez.flint.helper"
 
     // Apple Team ID: OU of the Developer ID certificate; validates the cross XPC
     // signature. (Omar's team — Developer ID Application C34D3V8484.) With local

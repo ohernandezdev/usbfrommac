@@ -4,20 +4,20 @@
 <dict>
 	<!-- launchd plist para SMAppService.daemon(plistName:).
 	     Va embebido en la app en: Contents/Library/LaunchDaemons/<este archivo>.
-	     El ejecutable del helper va en: Contents/MacOS/UsbFromMacHelper.
+	     El ejecutable del helper va en: Contents/MacOS/FlintHelper.
 	     (El cableado de copia + firma se hace en Fase 2 con tu Developer ID.) -->
 	<key>Label</key>
-	<string>com.omarhernandez.usbfrommac.helper</string>
+	<string>com.omarhernandez.flint.helper</string>
 	<key>BundleProgram</key>
-	<string>Contents/MacOS/UsbFromMacHelper</string>
+	<string>Contents/MacOS/FlintHelper</string>
 	<key>MachServices</key>
 	<dict>
-		<key>com.omarhernandez.usbfrommac.helper</key>
+		<key>com.omarhernandez.flint.helper</key>
 		<true/>
 	</dict>
 	<key>AssociatedBundleIdentifiers</key>
 	<array>
-		<string>com.omarhernandez.usbfrommac</string>
+		<string>com.omarhernandez.flint</string>
 	</array>
 </dict>
 </plist>

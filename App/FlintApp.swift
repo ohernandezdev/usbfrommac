@@ -1,7 +1,7 @@
 import SwiftUI
 
 @main
-struct UsbFromMacApp: App {
+struct FlintApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

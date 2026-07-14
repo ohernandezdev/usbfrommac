@@ -14,7 +14,7 @@ public final class DiskArbitrationSource: DiskEnumerating {
     public var onChange: (([DiskCandidate]) -> Void)?
 
     private var session: DASession?
-    private let queue = DispatchQueue(label: "com.omarhernandez.usbfrommac.diskarbitration")
+    private let queue = DispatchQueue(label: "com.omarhernandez.flint.diskarbitration")
 
     public init() {}
 

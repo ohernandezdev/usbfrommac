@@ -13,6 +13,8 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: Carbon.Space.md) {
+                BrandMark()
+                Divider().frame(height: 16).overlay(Carbon.hairlineStrong)
                 CarbonStepBar(step: coordinator.step,
                               isBuilding: coordinator.isBuilding,
                               onSelect: navigate)
@@ -114,10 +116,9 @@ private struct CarbonStepBar: View {
         HStack(spacing: Carbon.Space.xs) {
             ZStack {
                 Circle()
-                    .fill(current ? AnyShapeStyle(Carbon.primaryGradient)
-                                  : (past ? AnyShapeStyle(Carbon.primary) : AnyShapeStyle(Carbon.surface2)))
+                    .fill(current || past ? AnyShapeStyle(Carbon.primary) : AnyShapeStyle(Carbon.surface2))
                     .frame(width: 26, height: 26)
-                    .overlay(Circle().stroke(Carbon.hairline, lineWidth: past || current ? 0 : 1))
+                    .overlay(Circle().strokeBorder(Carbon.hairline, lineWidth: past || current ? 0 : 1))
                 if past {
                     Image(systemName: "checkmark").font(.system(size: 12, weight: .bold))
                         .foregroundStyle(Carbon.onPrimary)
@@ -131,6 +132,20 @@ private struct CarbonStepBar: View {
                 .foregroundStyle(current ? Carbon.ink : Carbon.inkMuted)
                 .fixedSize()
         }
+    }
+}
+
+/// Flint wordmark. A spark glyph + the product name, ink-only (no accent color).
+private struct BrandMark: View {
+    var body: some View {
+        HStack(spacing: Carbon.Space.xxs) {
+            Image(systemName: "power")
+                .font(.system(size: 12, weight: .semibold))
+            Text(verbatim: "Flint")
+                .carbon(.cardTitle)
+        }
+        .foregroundStyle(Carbon.ink)
+        .fixedSize()
     }
 }
 

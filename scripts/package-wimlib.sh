@@ -3,7 +3,7 @@
 # package-wimlib.sh — packages wimlib-imagex + its dylibs inside App/Resources
 # and makes them self-contained (@executable_path) so the app is distributable.
 #
-# wimlib is GPLv3. USB from Mac is open source (GPLv3), so packaging the binary
+# wimlib is GPLv3. Flint is open source (GPLv3), so packaging the binary
 # and running it as a subprocess is perfectly compatible.
 #
 # Usage:

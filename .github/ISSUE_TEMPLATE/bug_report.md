@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Report a problem with USB from Mac
+about: Report a problem with Flint
 title: "[Bug] "
 labels: bug
 ---
@@ -15,7 +15,7 @@ A clear and concise description of what went wrong.
 - **Mac model / architecture:** (Intel or Apple Silicon)
 - **Windows ISO version:** (e.g. Win11 23H2 English x64)
 - **USB drive brand & size:** (e.g. SanDisk 64 GB)
-- **USB from Mac version / commit:**
+- **Flint version / commit:**
 
 ## Steps to reproduce
 
@@ -36,7 +36,7 @@ What actually happened. Include any on-screen error text.
 If the failure involved formatting or the privileged helper, please attach the helper logs:
 
 ```bash
-log stream --predicate 'process == "UsbFromMacHelper"'
+log stream --predicate 'process == "FlintHelper"'
 ```
 
 (Reproduce the issue while this is running and paste the relevant output.)

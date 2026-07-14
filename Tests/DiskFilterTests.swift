@@ -1,5 +1,5 @@
 import XCTest
-@testable import UsbFromMac
+@testable import Flint
 
 /// Tests for the app's safety core (CA-1 / CA-6 / S-1):
 /// it must be IMPOSSIBLE for the internal or boot disk to pass the filter,

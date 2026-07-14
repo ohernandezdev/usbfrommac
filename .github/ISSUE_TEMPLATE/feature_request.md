@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an idea for USB from Mac
+about: Suggest an idea for Flint
 title: "[Feature] "
 labels: enhancement
 ---

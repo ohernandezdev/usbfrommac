@@ -1,6 +1,6 @@
-# Contributing to USB from Mac
+# Contributing to Flint
 
-Thanks for your interest in improving USB from Mac. This app erases disks and runs a root helper, so contributions are held to a high safety bar. Please read the safety rules below before sending code.
+Thanks for your interest in improving Flint. This app erases disks and runs a root helper, so contributions are held to a high safety bar. Please read the safety rules below before sending code.
 
 ## Development setup
 
@@ -9,7 +9,7 @@ This project uses [XcodeGen](https://github.com/yonsk/XcodeGen); the `.xcodeproj
 ```bash
 brew install xcodegen wimlib
 xcodegen generate
-open UsbFromMac.xcodeproj
+open Flint.xcodeproj
 ```
 
 `wimlib-imagex` and `libwim.*.dylib` live under `App/Resources/` and are bundled into the app. They must be present for the split step.
@@ -17,7 +17,7 @@ open UsbFromMac.xcodeproj
 ## Running tests
 
 ```bash
-xcodebuild test -scheme UsbFromMac -destination 'platform=macOS'
+xcodebuild test -scheme Flint -destination 'platform=macOS'
 ```
 
 The test suite focuses on the safety-critical logic: disk filtering (`DiskFilterTests`) and the split-size / build-flow decisions (`BuildFlowTests`). New safety-relevant code must come with tests.

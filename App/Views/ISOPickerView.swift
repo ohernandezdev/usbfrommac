@@ -107,7 +107,7 @@ struct ISOPickerView: View {
         .padding(.horizontal, Carbon.Space.md)
         .background(Carbon.surface1)
         .clipShape(RoundedRectangle(cornerRadius: Carbon.Radius.control, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Carbon.Radius.control, style: .continuous).stroke(Carbon.hairline, lineWidth: 1))
+        .overlay(RoundedRectangle(cornerRadius: Carbon.Radius.control, style: .continuous).strokeBorder(Carbon.hairline, lineWidth: 1))
     }
 
     private var footer: some View {

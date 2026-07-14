@@ -1,3 +1,8 @@
+> **Historical document.** This is the original product spec that kicked off the
+> project, written before it was renamed to **Flint**. Kept for context on the
+> original design rationale; superseded by [README.md](../README.md) for
+> current architecture and features. Left in the original Spanish.
+
 # PRD — "WinUSB Mac": Creador de USB booteable de Windows 11 desde macOS
 
 **Versión:** 1.0

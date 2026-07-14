@@ -23,6 +23,6 @@ jobs:
       - name: Run tests
         run: |
           xcodebuild test \
-            -scheme UsbFromMac \
+            -scheme Flint \
             -destination 'platform=macOS' \
             CODE_SIGNING_ALLOWED=NO

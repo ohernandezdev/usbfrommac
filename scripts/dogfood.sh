@@ -22,7 +22,7 @@ TEAM="C34D3V8484"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
-APP_NAME="UsbFromMac.app"
+APP_NAME="Flint.app"
 INSTALL="/Applications/$APP_NAME"
 
 # 1. wimlib (optional but required to split install.wim) ----------------------
@@ -51,7 +51,7 @@ xcodegen generate
 
 echo "▸ Building signed (Developer ID + hardened runtime)…"
 rm -rf build/dd
-xcodebuild -project UsbFromMac.xcodeproj -scheme UsbFromMac -configuration Release \
+xcodebuild -project Flint.xcodeproj -scheme Flint -configuration Release \
   -derivedDataPath build/dd \
   CODE_SIGN_STYLE=Manual \
   CODE_SIGN_IDENTITY="$IDENTITY" \
@@ -65,11 +65,11 @@ APP="build/dd/Build/Products/Release/$APP_NAME"
 # 3. Re-sign helper + app (seals the bundle with hardened runtime) ------------
 echo "▸ Re-signing helper and app…"
 # --identifier: a tool without an Info.plist is signed with the executable's name
-# ("UsbFromMacHelper"); the XPC requirement demands "com.omarhernandez.usbfrommac.helper".
+# ("FlintHelper"); the XPC requirement demands "com.omarhernandez.flint.helper".
 codesign --force --options runtime --timestamp \
-  --identifier com.omarhernandez.usbfrommac.helper \
+  --identifier com.omarhernandez.flint.helper \
   --entitlements Helper/Helper.entitlements --sign "$IDENTITY" \
-  "$APP/Contents/MacOS/UsbFromMacHelper"
+  "$APP/Contents/MacOS/FlintHelper"
 codesign --force --options runtime --timestamp \
   --entitlements App/App.entitlements --sign "$IDENTITY" "$APP"
 echo "▸ Verifying signature…"
@@ -77,15 +77,29 @@ codesign --verify --deep --strict --verbose=2 "$APP"
 
 # 4. Install in /Applications ------------------------------------------------
 echo "▸ Installing in $INSTALL…"
-osascript -e 'tell application "UsbFromMac" to quit' 2>/dev/null || true
-pkill -x UsbFromMac 2>/dev/null || true
+osascript -e 'tell application "Flint" to quit' 2>/dev/null || true
+pkill -x Flint 2>/dev/null || true
 rm -rf "$INSTALL"
 cp -R "$APP" "$INSTALL"
+
+# 5. Restart the privileged helper daemon ------------------------------------
+# It's a system LaunchDaemon that keeps running across reinstalls: overwriting
+# the binary on disk does NOT replace the already-running process, so without
+# this, every rebuild silently keeps serving the OLD code until the daemon is
+# killed some other way (or the Mac reboots). `-n` fails fast instead of
+# blocking on a password prompt if sudo isn't already cached.
+if sudo -n launchctl kickstart -k system/com.omarhernandez.flint.helper 2>/dev/null; then
+  echo "▸ Restarted the privileged helper daemon."
+else
+  echo "⚠ Couldn't restart the privileged helper daemon without a cached sudo session."
+  echo "  Run this yourself or it'll keep serving the OLD build:"
+  echo "    sudo launchctl kickstart -k system/com.omarhernandez.flint.helper"
+fi
 
 echo
 echo "✓ Installed: $INSTALL"
 echo "  Open it:  open \"$INSTALL\""
 echo "  If it asks you to approve the privileged component:"
-echo "    System Settings → General → Login Items → enable «USB from Mac»."
+echo "    System Settings → General → Login Items → enable «Flint»."
 echo "  Helper logs in another terminal:"
-echo "    log stream --predicate 'process == \"UsbFromMacHelper\"' --info"
+echo "    log stream --predicate 'process == \"FlintHelper\"' --info"

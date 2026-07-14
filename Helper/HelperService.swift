@@ -50,7 +50,6 @@ final class HelperService: NSObject, HelperProtocol {
     func writeImage(isoPath: String,
                     bsdName: String,
                     reply: @escaping (Bool, String?) -> Void) {
-
         // Same safeguards as formatting: the raw write is just as destructive.
         guard Self.isValidWholeDiskBSD(bsdName) else {
             return reply(false, "Invalid disk identifier: \(bsdName)")
@@ -70,6 +69,14 @@ final class HelperService: NSObject, HelperProtocol {
         guard unmount.status == 0 else {
             let msg = String(data: unmount.stderr, encoding: .utf8) ?? ""
             return reply(false, "Couldn't unmount the disk before writing: \(msg)")
+        }
+
+        // Re-validate right before opening the device: unmounting takes real wall-clock
+        // time, which is a window where the disk could have been unplugged and a
+        // different device reassigned the same bsdName. Closing it here, immediately
+        // before the write, rather than trusting the check from before the unmount.
+        if case .failure(let message) = Self.validateRemovableExternal(bsdName, diskutil: diskutil) {
+            return reply(false, "Re-validation before write failed: \(message)")
         }
 
         // Reverse progress channel back to the app (if available).
@@ -94,7 +101,7 @@ final class HelperService: NSObject, HelperProtocol {
         let total = (try? FileManager.default.attributesOfItem(atPath: isoPath)[.size] as? NSNumber)??.int64Value ?? 0
 
         guard let input = FileHandle(forReadingAtPath: isoPath) else {
-            return (false, "Couldn't open the image for reading.")
+            return (false, "Couldn't open the image for reading. Grant Full Disk Access to Flint in System Settings → Privacy & Security → Full Disk Access, then try again.")
         }
         defer { try? input.close() }
 
@@ -132,7 +139,17 @@ final class HelperService: NSObject, HelperProtocol {
             progress(min(writtenTotal, total), total)
         }
 
-        guard fcntl(fd, F_FULLFSYNC) == 0 else {
+        // Flush the device's write cache before ejecting, using the disk-level ioctl
+        // (the same one `diskutil eject` uses) rather than `fcntl(F_FULLFSYNC)`, which
+        // is meant for files on a mounted filesystem, not a raw block device.
+        //
+        // ENOTTY here means the device's driver doesn't implement ANY explicit-sync
+        // ioctl — not that the write failed. That's expected for some generic USB
+        // mass-storage controllers, and it's harmless: writes to the raw `/dev/rdiskN`
+        // node are already unbuffered/synchronous (that's the whole point of "raw"
+        // vs the buffered `/dev/diskN`), so there is no dirty cache left to flush.
+        // Any OTHER errno here is a real fault and still aborts.
+        if ioctl(fd, 0x20006416 /* DKIOCSYNCHRONIZECACHE */, 0) != 0 && errno != ENOTTY {
             return (false, "Couldn't sync the device (errno \(errno)).")
         }
         return (true, nil)

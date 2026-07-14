@@ -1,19 +1,24 @@
-# USB from Mac
+# Flint
 
 Create a bootable Windows or Linux USB drive from an ISO on macOS — safely. A minimalist "Rufus for Mac".
 
 [![Platform: macOS 13+](https://img.shields.io/badge/platform-macOS%2013%2B-blue.svg)](https://www.apple.com/macos/)
 [![License: GPLv3](https://img.shields.io/badge/license-GPLv3-green.svg)](LICENSE)
 [![Language: Swift](https://img.shields.io/badge/language-Swift%205.9-orange.svg)](https://swift.org)
+[![Latest release](https://img.shields.io/github/v/release/ohernandezdev/usbfrommac?label=download)](https://github.com/ohernandezdev/usbfrommac/releases/latest)
 
-USB from Mac is a native macOS app (Swift 5.9 + SwiftUI) that turns a Windows ISO **or** a Linux / isohybrid ISO into a bootable USB stick — without Boot Camp, without third-party closed binaries, and without ever putting your internal disk at risk.
+Flint is a native macOS app (Swift 5.9 + SwiftUI) that turns a Windows ISO **or** a Linux / isohybrid ISO into a bootable USB stick — without Boot Camp, without third-party closed binaries, and without ever putting your internal disk at risk.
 
 The app inspects each ISO's boot structure and automatically picks the right strategy: Windows installers are copied to a FAT32 volume (with `install.wim` split so it fits), while Linux / isohybrid images are written raw, byte for byte, to the device.
 
+## Download
+
+Grab the latest signed and notarized build from the **[Releases page](https://github.com/ohernandezdev/usbfrommac/releases/latest)**: download the `.dmg`, drag **Flint** into Applications, and open it. On first launch, macOS will ask you to approve the privileged helper in **System Settings → General → Login Items** — that's expected, it's the root component that does the actual disk formatting/writing (see [Safety model](#safety-model)).
+
 ## Table of Contents
 
+- [Download](#download)
 - [Features](#features)
-- [Screenshots](#screenshots)
 - [Safety model](#safety-model)
 - [Requirements](#requirements)
 - [Building from source](#building-from-source)
@@ -37,17 +42,13 @@ The app inspects each ISO's boot structure and automatically picks the right str
 - **Real progress everywhere.** Live bytes / % / MB/s / ETA for every phase — including the raw write — not just an indeterminate spinner.
 - **Bilingual UI.** English and Spanish (i18n).
 
-## Screenshots
-
-<!-- TODO: add screenshots — see docs/ for captures of the disk picker, confirmation, and progress views -->
-
 ## Safety model
 
-USB from Mac formats disks and runs code as root, so safety is the core of its design rather than an afterthought. Several mechanisms make it hard to lose data:
+Flint formats disks and runs code as root, so safety is the core of its design rather than an afterthought. Several mechanisms make it hard to lose data:
 
 **1. Internal-disk whitelist.** The disk enumerator (`DiskFilter` / `DiskArbitrationSource`) only ever surfaces candidates that are `external` + `physical` + removable USB media. The system boot disk is filtered out explicitly, and mounted disk images, cryptexes and virtual devices (`busProtocol == "Disk Image"`, `Virtual`) are rejected too. The internal disk physically cannot appear in the picker.
 
-**2. Privilege isolation.** Only the destructive steps need root: `diskutil eraseDisk` (Windows flow) and the raw `dd`-style write to `/dev/rdiskN` (Linux flow). Both live in a minimal daemon (`UsbFromMacHelper`) registered with `SMAppService` and invoked over XPC. The helper independently re-checks that its target is external/removable before touching it (safeguard **S-4**). The rest of the pipeline — copy, split, verify, eject — runs unprivileged.
+**2. Privilege isolation.** Only the destructive steps need root: `diskutil eraseDisk` (Windows flow) and the raw `dd`-style write to `/dev/rdiskN` (Linux flow). Both live in a minimal daemon (`FlintHelper`) registered with `SMAppService` and invoked over XPC. The helper independently re-checks that its target is external/removable before touching it (safeguard **S-4**). The rest of the pipeline — copy, split, verify, eject — runs unprivileged.
 
 On top of that, the build flow enforces the destructive-operation safeguards **S-2 … S-5**: an explicit confirmation showing the exact disk name and size (S-2), re-validation of the disk identifier *immediately* before writing (S-3), the helper-side external-media check (S-4), and fail-safe error handling that aborts cleanly with no half-finished state (S-5). For the raw flow, the app additionally refuses to start unless the USB is at least the ISO's size, so a raw write can never be cut short by a too-small drive.
 
@@ -77,7 +78,7 @@ brew install xcodegen wimlib
 xcodegen generate
 
 # 3. Open and build
-open UsbFromMac.xcodeproj
+open Flint.xcodeproj
 ```
 
 The app bundles `wimlib-imagex` and `libwim.*.dylib` under `App/Resources/`; these must be present (and signed) for the Windows split step to work. They are copied into `Contents/Resources` of the app bundle as an explicit resource phase.
@@ -88,7 +89,7 @@ For a **signed local build** (Developer ID, for running on real hardware) use th
 scripts/dogfood.sh
 ```
 
-It signs the app and re-signs the helper with the correct identifier (`com.omarhernandez.usbfrommac.helper`) — see [docs/DOGFOODING.md](docs/DOGFOODING.md) for the gotchas around `SMAppService`, XPC and the on-demand daemon. Notarized distribution outside the Mac App Store is planned but not yet shipped.
+It signs the app and re-signs the helper with the correct identifier (`com.omarhernandez.flint.helper`) — see [docs/DOGFOODING.md](docs/DOGFOODING.md) for the gotchas around `SMAppService`, XPC and the on-demand daemon. Notarized distribution outside the Mac App Store is planned but not yet shipped.
 
 ## How it works
 
@@ -111,11 +112,11 @@ The interface is fully localized in **English** and **Spanish**. All code, comme
 
 ## License
 
-USB from Mac is released under the **GNU General Public License v3.0** — see [LICENSE](LICENSE) for the full text.
+Flint is released under the **GNU General Public License v3.0** — see [LICENSE](LICENSE) for the full text.
 
 GPLv3 is required because the app bundles and distributes [wimlib](https://wimlib.net), which is itself GPLv3-licensed. Any redistribution must keep the source available under the same terms.
 
 ## Acknowledgements
 
 - [wimlib](https://wimlib.net) — the WIM library that makes FAT32-safe `install.wim` splitting possible.
-- [IBM Carbon Design System](https://carbondesignsystem.com) — design language reference for the UI.
+- [Vercel's Geist design system](https://vercel.com/geist) — design language reference for the UI (the internal token API keeps the historical `Carbon` name for compatibility).

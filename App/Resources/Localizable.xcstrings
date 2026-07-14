@@ -261,8 +261,8 @@
     },
     "error.helper.requiresApproval" : {
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Authorize “USB from Mac” in System Settings → General → Login Items to allow formatting." } },
-        "es" : { "stringUnit" : { "state" : "translated", "value" : "Autoriza «USB from Mac» en Ajustes del Sistema → General → Elementos de inicio para poder formatear." } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Authorize “Flint” in System Settings → General → Login Items to allow formatting." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Autoriza «Flint» en Ajustes del Sistema → General → Elementos de inicio para poder formatear." } }
       }
     },
     "error.iso.attachFailed %@" : {
@@ -577,6 +577,12 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "No se pudo completar" } }
       }
     },
+    "action.openFullDiskAccess" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open Full Disk Access Settings" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Abrir Ajustes de Acceso Total al Disco" } }
+      }
+    },
     "step.goBack" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Go back to this step" } },
@@ -625,10 +631,16 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Desactiva Fast Boot." } }
       }
     },
-    "success.boot.tip4" : {
+    "success.boot.tip4.windows" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Secure Boot can stay enabled if the ISO is recent (2023 cert)." } },
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Secure Boot puede quedar activado si el ISO es reciente (cert 2023)." } }
+      }
+    },
+    "success.boot.tip4.linux" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "If it doesn't boot, try disabling Secure Boot — support varies by distro." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Si no arranca, prueba desactivar Secure Boot — el soporte varía según la distro." } }
       }
     },
     "success.boot.title" : {
@@ -649,10 +661,16 @@
         "es" : { "stringUnit" : { "state" : "translated", "value" : "Ya puedes expulsarlo y arrancar la PC destino desde él." } }
       }
     },
-    "success.title" : {
+    "success.title.windows" : {
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Windows 11 USB ready" } },
         "es" : { "stringUnit" : { "state" : "translated", "value" : "USB de Windows 11 listo" } }
+      }
+    },
+    "success.title.linux" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Bootable USB ready" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "USB booteable listo" } }
       }
     },
     "transfer.eta %@" : {

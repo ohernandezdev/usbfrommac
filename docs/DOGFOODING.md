@@ -2,7 +2,7 @@
 
 ## Windows flow (validated on real hardware)
 
-Notes from the first real-hardware test of **USB from Mac**, creating a bootable
+Notes from the first real-hardware test of **Flint**, creating a bootable
 Windows 11 USB (ISO `Win11_25H2_Spanish_x64_v2.iso`) on a 62 GB Lexar stick.
 
 **Environment:** macOS 15.7.7 (Sequoia) · Apple Silicon · **Developer ID
@@ -38,13 +38,13 @@ against a physical USB.
 #### 2. "Couldn't communicate with a helper application"
 - **Symptom:** after approving the daemon, the XPC connection invalidated instantly.
 - **Root cause:** a *tool* target with no `Info.plist` is signed with the
-  **executable name** as its identifier (`UsbFromMacHelper`), but the cross-signing
-  requirement demanded `identifier "com.omarhernandez.usbfrommac.helper"`. They
+  **executable name** as its identifier (`FlintHelper`), but the cross-signing
+  requirement demanded `identifier "com.omarhernandez.flint.helper"`. They
   didn't match. Verified with `codesign -dvvv`.
 - **Fix:** `scripts/dogfood.sh` re-signs the helper with
-  `--identifier com.omarhernandez.usbfrommac.helper`.
+  `--identifier com.omarhernandez.flint.helper`.
 - **Note:** when re-signing you must **kill the old daemon** (`sudo killall
-  UsbFromMacHelper`) or launchd keeps running the previous binary in memory.
+  FlintHelper`) or launchd keeps running the previous binary in memory.
 
 #### 3. Raw error message on first launch
 - **Symptom:** "Couldn't register the privileged component: Operation not
@@ -110,11 +110,11 @@ booted from a stick this app produced, the Linux flow is not "validated".
 What to do:
 
 1. **Re-approve the helper for the current bundle id.** The helper is registered
-   with `SMAppService` under `com.omarhernandez.usbfrommac.helper`; to the system
+   with `SMAppService` under `com.omarhernandez.flint.helper`; to the system
    this is a *new* service, so the previous approval doesn't carry over. After
    `scripts/dogfood.sh`:
    ```bash
-   sudo killall UsbFromMacHelper        # drop any old daemon from memory
+   sudo killall FlintHelper        # drop any old daemon from memory
    ```
    then approve it in **System Settings → General → Login Items** when the app
    asks on first run.

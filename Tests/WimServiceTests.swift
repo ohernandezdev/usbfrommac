@@ -1,5 +1,5 @@
 import XCTest
-@testable import UsbFromMac
+@testable import Flint
 
 final class WimServiceTests: XCTestCase {
 
@@ -44,7 +44,7 @@ final class WimServiceTests: XCTestCase {
     // MARK: Command construction
 
     func testSplitCommand() {
-        let binary = URL(fileURLWithPath: "/Applications/UsbFromMac.app/Contents/Resources/wimlib-imagex")
+        let binary = URL(fileURLWithPath: "/Applications/Flint.app/Contents/Resources/wimlib-imagex")
         let wim = URL(fileURLWithPath: "/Volumes/CCCOMA/sources/install.wim")
         let firstSWM = URL(fileURLWithPath: "/Volumes/WIN11/sources/install.swm")
 

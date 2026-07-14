@@ -1,5 +1,5 @@
 import XCTest
-@testable import UsbFromMac
+@testable import Flint
 
 /// USB size rules per build flow.
 ///

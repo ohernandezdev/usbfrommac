@@ -1,52 +1,47 @@
 import SwiftUI
 import AppKit
 
-/// USB-from-Mac design system.
+/// Flint design system.
 ///
-/// Visual language: modern native macOS (Sonoma / Raycast / Linear style) —
-/// rounded surfaces with depth from a soft shadow (no hard hairlines),
-/// system typography (SF Pro) at real weights, a vibrant blue accent, and
-/// generous breathing room. Every token adapts to light/dark.
+/// Visual language: Vercel-inspired (Geist) — near-white/near-black canvas,
+/// a single ink primary reserved for CTAs, a deliberate gray scale, flat
+/// surfaces (no gradients), stacked soft shadows + hairline rings on cards,
+/// and restrained, high-contrast typography with negative tracking on
+/// headings. Every token adapts to light/dark.
 ///
-/// (The `Carbon` name is kept for API compatibility; the language is no longer
-/// the original flat IBM Carbon.)
+/// (The `Carbon` name is kept for API compatibility across the app.)
 enum Carbon {
 
     // MARK: Colors (light/dark dynamic)
 
-    /// Window background (slightly tinted so white cards float above it).
-    static let canvas         = Color(light: 0xF2F3F5, dark: 0x1A1A1C)
+    /// Page background (canvas-soft).
+    static let canvas         = Color(light: 0xFAFAFA, dark: 0x000000)
     /// Card / control surface (floats above the canvas).
-    static let surface1       = Color(light: 0xFFFFFF, dark: 0x2A2A2D)
-    static let surface2       = Color(light: 0xEDEEF1, dark: 0x37373B)
-    /// Very subtle separators (almost imperceptible, not hard lines).
-    static let hairline       = Color(light: 0x000000, dark: 0xFFFFFF).opacity(0.07)
-    static let hairlineStrong = Color(light: 0x000000, dark: 0xFFFFFF).opacity(0.14)
+    static let surface1       = Color(light: 0xFFFFFF, dark: 0x0A0A0A)
+    /// Inset surface: hover fills, code blocks, dropdowns.
+    static let surface2       = Color(light: 0xF5F5F5, dark: 0x1A1A1A)
+    /// Subtle hairline dividers and borders. 0.08 (the literal Vercel token value)
+    /// read as nearly invisible on card outlines in practice — bumped for legibility.
+    static let hairline       = Color(light: 0x000000, dark: 0xFFFFFF).opacity(0.14)
+    /// Stronger hairline: input borders, unselected controls.
+    static let hairlineStrong = Color(light: 0x000000, dark: 0xFFFFFF).opacity(0.18)
 
-    static let ink            = Color(light: 0x1D1D1F, dark: 0xF5F5F7)
-    static let inkMuted       = Color(light: 0x6E6E73, dark: 0xAEAEB2)
-    static let inkSubtle      = Color(light: 0x8A8A8F, dark: 0x8A8A8F)
+    static let ink            = Color(light: 0x171717, dark: 0xEDEDED)
+    static let inkMuted        = Color(light: 0x4D4D4D, dark: 0xA1A1A1)
+    static let inkSubtle       = Color(light: 0x8F8F8F, dark: 0x8A8A8A)
 
-    /// Primary accent (the system's vivid blue).
-    static let primary        = Color(light: 0x0A84FF, dark: 0x0A84FF)
-    static let primaryDeep    = Color(light: 0x0060DF, dark: 0x0060DF)
-    static let success        = Color(light: 0x1FA34B, dark: 0x30D158)
-    static let warning        = Color(light: 0xE08600, dark: 0xFFD60A)
-    static let error          = Color(light: 0xE5342B, dark: 0xFF453A)
-    static let onPrimary      = Color(hex: 0xFFFFFF)
-    static let inverseCanvas  = Color(light: 0x1D1D1F, dark: 0xF5F5F7)
+    /// The single strong accent, reserved for primary CTAs (ink — never a brand blue).
+    static let primary        = ink
+    /// Text/icon on top of a primary-filled surface (flips polarity with `ink`).
+    static let onPrimary      = Color(light: 0xFFFFFF, dark: 0x0A0A0A)
 
-    /// Primary button/accent gradient (subtle, adds volume without shouting).
-    static var primaryGradient: LinearGradient {
-        LinearGradient(colors: [Color(hex: 0x2D95FF), Color(hex: 0x0A6CFF)],
-                       startPoint: .top, endPoint: .bottom)
-    }
-    static var dangerGradient: LinearGradient {
-        LinearGradient(colors: [Color(hex: 0xFF5247), Color(hex: 0xE5342B)],
-                       startPoint: .top, endPoint: .bottom)
-    }
+    /// Link / focus-ring / success accent — the only non-ink color in the system.
+    static let link           = Color(light: 0x0070F3, dark: 0x3291FF)
+    static let success        = link
+    static let warning        = Color(light: 0xF5A623, dark: 0xF7B955)
+    static let error          = Color(light: 0xEE0000, dark: 0xFF6166)
 
-    // MARK: Spacing (4 px grid)
+    // MARK: Spacing (strict 4px grid)
 
     enum Space {
         static let xxs: CGFloat = 4
@@ -58,41 +53,43 @@ enum Carbon {
         static let xxl: CGFloat = 48
     }
 
-    // MARK: Corner radii
+    // MARK: Corner radii — one family per view (sm for controls, md for cards)
 
     enum Radius {
-        static let chip:   CGFloat = 8
-        static let control: CGFloat = 10
-        static let card:   CGFloat = 16
-        static let pill:   CGFloat = 999
+        /// Everyday UI: buttons, inputs, nav chips.
+        static let control: CGFloat = 6
+        /// Small icon swatches / chips.
+        static let chip:    CGFloat = 8
+        /// Cards and elevated containers.
+        static let card:    CGFloat = 10
+        /// Marketing-scale pill (unused in this compact desktop UI, kept for API parity).
+        static let pill:    CGFloat = 999
     }
 
-    // MARK: Motion (respects Reduce Motion)
+    // MARK: Motion (short, physical, respects Reduce Motion)
 
     enum Motion {
-        static let fast     = Animation.easeOut(duration: 0.16)
-        static let standard = Animation.spring(response: 0.36, dampingFraction: 0.84)
+        static let fast     = Animation.easeOut(duration: 0.15)
+        static let standard = Animation.timingCurve(0.175, 0.885, 0.32, 1.1, duration: 0.28)
         static func resolve(_ animation: Animation, reduce: Bool) -> Animation? {
             reduce ? nil : animation
         }
     }
 }
 
-// MARK: - Shadows (soft elevation)
+// MARK: - Shadows (stacked soft elevation, never a single heavy drop shadow)
 
 extension View {
-    /// Floating card shadow (soft, diffuse, never hard).
+    /// Card elevation: a tight contact shadow + a soft diffuse shadow, stacked.
+    /// Pair with a hairline stroke overlay for the signature inset ring.
     func cardShadow(_ scheme: ColorScheme) -> some View {
-        shadow(color: .black.opacity(scheme == .dark ? 0.45 : 0.10),
-               radius: 14, x: 0, y: 6)
-    }
-    /// Colored shadow for the primary CTA (gives it presence).
-    func glowShadow(_ color: Color, _ scheme: ColorScheme) -> some View {
-        shadow(color: color.opacity(scheme == .dark ? 0.35 : 0.28), radius: 10, x: 0, y: 4)
+        self
+            .shadow(color: .black.opacity(scheme == .dark ? 0.6 : 0.05), radius: 1, x: 0, y: 1)
+            .shadow(color: .black.opacity(scheme == .dark ? 0.45 : 0.08), radius: 10, x: 0, y: 4)
     }
 }
 
-// MARK: - Typography (system SF Pro)
+// MARK: - Typography (system SF Pro — Geist-equivalent geometric sans)
 
 enum CarbonText {
     case displayMd, headline, cardTitle, subhead, bodyLg, body, bodySm, bodyEmphasis, caption, button
@@ -112,10 +109,11 @@ enum CarbonText {
         }
     }
 
+    /// Max weight is 600 (semibold) — never bold — per the Vercel-inspired type rules.
     var weight: Font.Weight {
         switch self {
-        case .displayMd:    return .bold
-        case .headline:     return .bold
+        case .displayMd:    return .semibold
+        case .headline:     return .semibold
         case .cardTitle:    return .semibold
         case .subhead:      return .semibold
         case .bodyEmphasis: return .semibold
@@ -125,13 +123,14 @@ enum CarbonText {
         }
     }
 
-    /// Slightly negative tracking on titles = modern, compact look.
+    /// Aggressive negative tracking on display sizes, tapering off toward body text.
     var tracking: CGFloat {
         switch self {
-        case .displayMd: return -0.4
-        case .headline:  return -0.3
-        case .caption:   return 0.1
-        default:         return 0
+        case .displayMd: return -1.2
+        case .headline:  return -0.6
+        case .cardTitle: return -0.2
+        case .bodySm, .bodyEmphasis: return -0.14
+        default: return 0
         }
     }
 
@@ -187,7 +186,7 @@ extension NSColor {
     }
 }
 
-// MARK: - Buttons (rounded, raised, with soft states)
+// MARK: - Buttons (flat fills, no gradients — the ink primary is the only strong color)
 
 struct CarbonButton: ButtonStyle {
     enum Kind { case primary, secondary, tertiary, ghost, danger }
@@ -209,14 +208,12 @@ private struct CarbonButtonBody<Label: View>: View {
     @Environment(\.colorScheme) private var scheme
     @State private var hovering = false
 
-    private var filled: Bool { kind == .primary || kind == .danger }
-
     var body: some View {
         label
             .carbon(.button)
-            .padding(.vertical, 11)
-            .padding(.horizontal, 18)
-            .frame(minHeight: 40)
+            .padding(.vertical, 10)
+            .padding(.horizontal, 16)
+            .frame(minHeight: 36)
             .frame(maxWidth: fullWidth ? .infinity : nil)
             .foregroundStyle(foreground)
             .background(backgroundView)
@@ -224,7 +221,7 @@ private struct CarbonButtonBody<Label: View>: View {
             .clipShape(RoundedRectangle(cornerRadius: Carbon.Radius.control, style: .continuous))
             .modifier(ButtonElevation(kind: kind, enabled: isEnabled, scheme: scheme))
             .contentShape(Rectangle())
-            .scaleEffect(pressed ? 0.97 : 1)
+            .scaleEffect(pressed ? 0.98 : 1)
             .opacity(isEnabled ? 1 : 0.4)
             .animation(Carbon.Motion.fast, value: hovering)
             .animation(Carbon.Motion.fast, value: pressed)
@@ -232,16 +229,21 @@ private struct CarbonButtonBody<Label: View>: View {
             .pointingCursor()
     }
 
+    /// Ink's polarity flips between light/dark, so hover/press overlays must too:
+    /// lighten a dark (light-mode) fill, darken a light (dark-mode) fill.
+    private var hoverOverlay: Color { scheme == .dark ? .black.opacity(0.08) : .white.opacity(0.12) }
+    private var pressedOverlay: Color { scheme == .dark ? .black.opacity(0.16) : .white.opacity(0.20) }
+
     @ViewBuilder private var backgroundView: some View {
         switch kind {
         case .primary:
-            ZStack { Carbon.primaryGradient; if hovering { Color.white.opacity(0.10) }; if pressed { Color.black.opacity(0.14) } }
+            ZStack { Carbon.primary; if hovering { hoverOverlay }; if pressed { pressedOverlay } }
         case .danger:
-            ZStack { Carbon.dangerGradient; if hovering { Color.white.opacity(0.10) }; if pressed { Color.black.opacity(0.14) } }
+            ZStack { Carbon.error; if hovering { Color.white.opacity(0.10) }; if pressed { Color.black.opacity(0.14) } }
         case .secondary:
             (hovering ? Carbon.surface2 : Carbon.surface1)
         case .tertiary:
-            (pressed ? Carbon.primary.opacity(0.18) : (hovering ? Carbon.primary.opacity(0.10) : Carbon.primary.opacity(0.05)))
+            (pressed ? Carbon.surface2 : (hovering ? Carbon.surface2.opacity(0.6) : Color.clear))
         case .ghost:
             (pressed ? Carbon.surface2 : (hovering ? Carbon.surface1 : Color.clear))
         }
@@ -249,37 +251,36 @@ private struct CarbonButtonBody<Label: View>: View {
 
     private var foreground: Color {
         switch kind {
-        case .primary, .danger: return Carbon.onPrimary
-        case .secondary:        return Carbon.ink
-        case .tertiary, .ghost: return Carbon.primary
+        case .primary, .danger:        return Carbon.onPrimary
+        case .secondary, .tertiary, .ghost: return Carbon.ink
         }
     }
 
     @ViewBuilder private var borderOverlay: some View {
         let shape = RoundedRectangle(cornerRadius: Carbon.Radius.control, style: .continuous)
         switch kind {
-        case .secondary: shape.stroke(Carbon.hairlineStrong, lineWidth: 1)
-        case .tertiary:  shape.stroke(Carbon.primary.opacity(0.4), lineWidth: 1)
+        case .secondary: shape.strokeBorder(Carbon.hairlineStrong, lineWidth: 1)
         default:         EmptyView()
         }
     }
 }
 
-/// Button shadow/elevation by kind (only filled buttons "float").
+/// Subtle neutral elevation for filled buttons only (never a colored glow).
 private struct ButtonElevation: ViewModifier {
     let kind: CarbonButton.Kind
     let enabled: Bool
     let scheme: ColorScheme
     func body(content: Content) -> some View {
         switch (kind, enabled) {
-        case (.primary, true): content.glowShadow(Carbon.primary, scheme)
-        case (.danger, true):  content.glowShadow(Carbon.error, scheme)
-        default:               content
+        case (.primary, true), (.danger, true):
+            content.shadow(color: .black.opacity(scheme == .dark ? 0.5 : 0.12), radius: 6, x: 0, y: 2)
+        default:
+            content
         }
     }
 }
 
-// MARK: - Text field (rounded, soft fill, blue focus ring)
+// MARK: - Text field (flat fill, hairline border, link-blue focus ring)
 
 struct CarbonTextField: View {
     let placeholder: LocalizedStringKey
@@ -292,21 +293,21 @@ struct CarbonTextField: View {
             .textFieldStyle(.plain)
             .font(monospaced ? .system(size: 13, design: .monospaced) : .system(size: 14))
             .foregroundStyle(Carbon.ink)
-            .padding(.vertical, 10)
-            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .padding(.horizontal, 12)
             .background(Carbon.surface1)
             .clipShape(RoundedRectangle(cornerRadius: Carbon.Radius.control, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: Carbon.Radius.control, style: .continuous)
-                    .stroke(focused ? Carbon.primary : Carbon.hairlineStrong,
-                            lineWidth: focused ? 2 : 1)
+                    .strokeBorder(focused ? Carbon.link : Carbon.hairlineStrong,
+                                  lineWidth: focused ? 2 : 1)
             )
             .focused($focused)
             .animation(Carbon.Motion.fast, value: focused)
     }
 }
 
-// MARK: - Card (rounded surface with a soft shadow, no hard hairline)
+// MARK: - Card (flat surface, stacked shadow + inset hairline ring)
 
 private struct CarbonCard: ViewModifier {
     let surface: Color
@@ -320,14 +321,14 @@ private struct CarbonCard: ViewModifier {
             .clipShape(RoundedRectangle(cornerRadius: Carbon.Radius.card, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: Carbon.Radius.card, style: .continuous)
-                    .stroke(Carbon.hairline, lineWidth: 1)
+                    .strokeBorder(Carbon.hairline, lineWidth: 1)
             )
             .cardShadow(scheme)
     }
 }
 
 extension View {
-    /// Card container: rounded surface with a soft shadow.
+    /// Card container: flat surface, radius `card`, stacked shadow + hairline ring.
     func carbonCard(surface: Color = Carbon.surface1,
                     padding: CGFloat = Carbon.Space.lg) -> some View {
         modifier(CarbonCard(surface: surface, padding: padding))

@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- USB from Mac NO puede ir en sandbox: necesita acceso a disco crudo
+	<!-- Flint NO puede ir en sandbox: necesita acceso a disco crudo
 	     (DiskArbitration / formateo) que el sandbox del App Store prohíbe.
 	     Por eso se distribuye notarizada FUERA del Mac App Store. -->
 	<key>com.apple.security.app-sandbox</key>

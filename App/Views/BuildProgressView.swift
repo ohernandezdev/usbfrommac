@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 /// Step 4: per-phase progress, and the final result (success / error / cancelled).
 struct BuildProgressView: View {
@@ -12,7 +13,8 @@ struct BuildProgressView: View {
             successView
         case .failed(let m):
             resultView(icon: "xmark.octagon.fill", color: Carbon.error,
-                       title: "result.failed.title", message: Text(verbatim: m))
+                       title: "result.failed.title", message: Text(verbatim: m),
+                       recovery: Self.recoveryAction(for: m))
         case .cancelled:
             resultView(icon: "stop.circle.fill", color: Carbon.warning,
                        title: "result.cancelled.title", message: Text("result.cancelled.message"))
@@ -58,7 +60,8 @@ struct BuildProgressView: View {
         VStack(alignment: .leading, spacing: Carbon.Space.lg) {
             HStack(spacing: Carbon.Space.xs) {
                 Image(systemName: "checkmark.seal.fill").foregroundStyle(Carbon.success).font(.title)
-                Text("success.title").carbon(.headline).foregroundStyle(Carbon.ink)
+                Text(coordinator.isRawFlow ? "success.title.linux" : "success.title.windows")
+                    .carbon(.headline).foregroundStyle(Carbon.ink)
             }
             Text("success.subtitle")
                 .carbon(.body).foregroundStyle(Carbon.inkMuted)
@@ -68,7 +71,7 @@ struct BuildProgressView: View {
                 bootTip("success.boot.tip1")
                 bootTip("success.boot.tip2")
                 bootTip("success.boot.tip3")
-                bootTip("success.boot.tip4")
+                bootTip(coordinator.isRawFlow ? "success.boot.tip4.linux" : "success.boot.tip4.windows")
             }
             .carbonCard(surface: Carbon.surface1)
 
@@ -88,7 +91,29 @@ struct BuildProgressView: View {
 
     // MARK: Result (error / cancelled)
 
-    private func resultView(icon: String, color: Color, title: LocalizedStringKey, message: Text) -> some View {
+    /// A recognized failure that the app can help resolve directly, instead of just
+    /// describing it in text and leaving the user to find the fix themselves.
+    struct RecoveryAction {
+        let label: LocalizedStringKey
+        let perform: () -> Void
+    }
+
+    /// Recognizes the helper's "needs Full Disk Access" failure (raw write of a Linux
+    /// ISO reading from a TCC-protected folder) and offers a button straight to the
+    /// exact Settings pane, rather than making the user read the message and
+    /// navigate there themselves. The helper's error strings are always English
+    /// (it's a minimal daemon with no localization of its own), so matching on the
+    /// English substring is reliable regardless of the app's current language.
+    private static func recoveryAction(for message: String) -> RecoveryAction? {
+        guard message.contains("Full Disk Access") else { return nil }
+        return RecoveryAction(label: "action.openFullDiskAccess") {
+            guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles") else { return }
+            NSWorkspace.shared.open(url)
+        }
+    }
+
+    private func resultView(icon: String, color: Color, title: LocalizedStringKey, message: Text,
+                            recovery: RecoveryAction? = nil) -> some View {
         VStack(alignment: .leading, spacing: Carbon.Space.lg) {
             HStack(spacing: Carbon.Space.xs) {
                 Image(systemName: icon).foregroundStyle(color).font(.title)
@@ -100,6 +125,10 @@ struct BuildProgressView: View {
         }
         .safeAreaInset(edge: .bottom) {
             HStack {
+                if let recovery {
+                    Button(recovery.label, action: recovery.perform)
+                        .buttonStyle(CarbonButton(kind: .secondary))
+                }
                 Spacer()
                 Button("common.restart") { coordinator.reset() }
                     .buttonStyle(CarbonButton(kind: .primary))

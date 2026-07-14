@@ -1,3 +1,8 @@
+> **Historical document.** Working plan for the Windows+Linux/rebranding effort,
+> written while it was in progress. Kept for context; superseded by
+> [README.md](../README.md) and [DOGFOODING.md](DOGFOODING.md) for current
+> state. Left in the original Spanish.
+
 # Plan — soporte universal de ISOs (Windows + Linux) + rebranding
 
 Rama: `feature/linux-iso-support`. Objetivo: dejar de ser "solo Windows" y soportar
@@ -15,11 +20,11 @@ ISOs isohíbridos (Linux/BSD) por escritura cruda (`dd`), bajo un nombre genéri
 
 ## Tarea 0 — Rebranding ✅ HECHO
 
-Nombre nuevo: **UsbFromMac** (display "USB from Mac", módulo/targets `UsbFromMac*`,
-bundle `com.omarhernandez.usbfrommac`). Repo renombrado `IsoFromMac` → `usbfrommac`.
+Nombre nuevo: **Flint** (display "USB from Mac", módulo/targets `Flint*`,
+bundle `com.omarhernandez.flint`). Repo renombrado `IsoFromMac` → `flint`.
 Aplicado en las 3 capas (cosmética, módulo/targets, bundle/XPC); `xcodegen` + build +
 87 tests verdes. **Pendiente solo en hardware:** tras `dogfood.sh`, `sudo killall
-UsbFromMacHelper` y re-aprobar el servicio en Ajustes → Elementos de inicio (el
+FlintHelper` y re-aprobar el servicio en Ajustes → Elementos de inicio (el
 SMAppService cambió de identificador → es un servicio nuevo a ojos del sistema).
 
 Orden seguro (3 capas, de menor a mayor riesgo):
@@ -28,15 +33,15 @@ Orden seguro (3 capas, de menor a mayor riesgo):
    `Info.plist`; textos en README, CONTRIBUTING, SECURITY, docs, comentarios. Sin
    riesgo técnico.
 2. **Capa B (módulo/targets):** renombrar targets en `project.yml`
-   (`UsbFromMac*` → `UsbFromMac*`), `UsbFromMacApp.swift` → `UsbFromMacApp.swift`,
-   `@testable import UsbFromMac` → `import UsbFromMac` en los 12 tests, scripts
+   (`Flint*` → `Flint*`), `FlintApp.swift` → `FlintApp.swift`,
+   `@testable import Flint` → `import Flint` en los 12 tests, scripts
    (`dogfood.sh`, `build-notarize.sh`), `ci.yml`. `xcodegen generate` + test.
-3. **Capa A (bundle/XPC — coordinado):** cambiar `com.omarhernandez.usbfrommac` →
-   `com.omarhernandez.usbfrommac` en `project.yml` (prefix + PRODUCT_BUNDLE_IDENTIFIER),
+3. **Capa A (bundle/XPC — coordinado):** cambiar `com.omarhernandez.flint` →
+   `com.omarhernandez.flint` en `project.yml` (prefix + PRODUCT_BUNDLE_IDENTIFIER),
    `HelperProtocol` (`machServiceName`, `appBundleID`, `helperBundleID`, requisitos de
-   firma), renombrar el `.plist` del daemon (archivo `com.omarhernandez.usbfrommac.helper.plist`
+   firma), renombrar el `.plist` del daemon (archivo `com.omarhernandez.flint.helper.plist`
    + key del label), `dogfood.sh` (`--identifier`). Tras esto:
-   `sudo killall UsbFromMacHelper` y re-aprobar en Ajustes → Elementos de inicio
+   `sudo killall FlintHelper` y re-aprobar en Ajustes → Elementos de inicio
    (el SMAppService es un servicio nuevo a ojos del sistema). Verificar end-to-end en
    hardware (formateo Windows) antes de seguir.
 

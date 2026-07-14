@@ -4,6 +4,19 @@ import SwiftUI
 /// one is unreachable by design). The list updates live.
 struct DiskListView: View {
     @ObservedObject var coordinator: BuildCoordinator
+    // Observed directly (not just via `coordinator`): `DiskService` is a nested
+    // ObservableObject, and SwiftUI does NOT propagate a nested object's
+    // `@Published` changes through the outer `@ObservedObject` automatically. Without
+    // this, live disk-arrival updates (RF-1) are silently missed — the list only
+    // ever reflects whatever `disks` happened to be at the moment this view was
+    // last (re)created, which is why it used to appear to "fix itself" whenever
+    // something unrelated (like a language switch) forced the view to rebuild.
+    @ObservedObject private var diskService: DiskService
+
+    init(coordinator: BuildCoordinator) {
+        self.coordinator = coordinator
+        self._diskService = ObservedObject(wrappedValue: coordinator.diskService)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Carbon.Space.lg) {
@@ -13,12 +26,12 @@ struct DiskListView: View {
                     .carbon(.body).foregroundStyle(Carbon.inkMuted)
             }
 
-            if coordinator.diskService.disks.isEmpty {
+            if diskService.disks.isEmpty {
                 emptyState
             } else {
                 ScrollView {
                     VStack(spacing: Carbon.Space.sm) {
-                        ForEach(coordinator.diskService.disks) { disk in
+                        ForEach(diskService.disks) { disk in
                             DiskRow(disk: disk,
                                     verdict: disk.sizeVerdict(imageBytes: coordinator.isoInfo?.sizeBytes ?? 0,
                                                               isRawFlow: coordinator.isRawFlow),
@@ -102,7 +115,7 @@ private struct DiskRow: View {
             .clipShape(RoundedRectangle(cornerRadius: Carbon.Radius.card, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: Carbon.Radius.card, style: .continuous)
-                    .stroke(borderColor, lineWidth: selected || focused ? 2 : 1)
+                    .strokeBorder(borderColor, lineWidth: selected || focused ? 2 : 1)
             )
             .contentShape(Rectangle())
         }

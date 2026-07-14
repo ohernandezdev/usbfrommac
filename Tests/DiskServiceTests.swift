@@ -1,5 +1,5 @@
 import XCTest
-@testable import UsbFromMac
+@testable import Flint
 
 /// Tests for `DiskService` with a fake source: they verify that the service only
 /// publishes eligible USB drives and that it reacts to live connect/disconnect (RF-1),
