@@ -82,9 +82,24 @@ dynamic color approach.
   underneath the intro paragraphs.
 - Add a link to the new landing page (as a badge or a plain link near the
   top) alongside the existing release/license/platform badges.
+- New section, **"Why I built this"**, placed right after the intro
+  paragraphs and before "Download" — the origin story: bought a new PC to
+  build, needed a bootable Windows USB from a Mac, the existing options
+  were either paid or untrusted/unverified binaries for a tool that formats
+  a disk and runs as root — neither felt right for that risk. Built the
+  thing instead, framed honestly as something that's newly practical as a
+  solo project because of AI coding agents doing much of the
+  implementation.
 - No other structural changes — the existing Features / Safety model /
   Requirements / Building from source / How it works / Localization /
   License / Acknowledgements sections stay as they are.
+
+## Landing page addition
+
+- A short first-person "Why I built this" block on the landing page too
+  (condensed version of the README one), placed between the Hero and "How
+  it works" sections as a quiet, distinct callout — not another feature
+  card, a human aside.
 
 ## Out of scope / explicitly deferred
 
