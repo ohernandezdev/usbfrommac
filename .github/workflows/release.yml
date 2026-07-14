@@ -149,6 +149,16 @@ jobs:
             --wait
 
           xcrun stapler staple "$DMG_PATH"
+
+          # `stapler staple` already validates the ticket it just attached, which
+          # is the real proof this worked. This spctl check is an extra sanity
+          # check for the "downloaded from the internet" Gatekeeper path — but
+          # that path only evaluates quarantined files, and the runner never set
+          # a quarantine xattr (no browser download happened here), so without
+          # this spctl fails with "rejected: source=Insufficient Context" even on
+          # a correctly notarized/stapled file. Fake the quarantine flag a real
+          # download would set, so the check reflects what a user will see.
+          xattr -w com.apple.quarantine "0081;00000000;Safari;" "$DMG_PATH"
           spctl -a -vvv --type open "$DMG_PATH"
 
       - name: Publish GitHub Release
